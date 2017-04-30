@@ -1,19 +1,22 @@
 #!/usr/bin/env python2
 import cv2
 import dlib
+import skvideo.io 
 
 import util
 
 predictor_path = util.MODEL_PATH
 
 window = dlib.image_window()
-vc = cv2.VideoCapture(0)
+filename = "jam1.avi"
+vc = skvideo.io.VideoCapture(filename) 
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(predictor_path)
 
 if vc.isOpened():
     rval, frame = vc.read()
 else:
+    print("Video capture not succesfully opened!")
     rval = False
 
 framerate = util.FramerateCounter()
