@@ -1,0 +1,12 @@
+<launch>
+
+  <arg name="image" default="/camera/rgb/image_raw"/>
+
+  <node pkg="gazr" type="estimate_focus" name="estimate_focus" />
+
+  <node pkg="gazr" type="estimate" name="gazr">
+    <param name="face_model" value="$(find gazr)/shape_predictor_68_face_landmarks.dat" />
+    <remap from="/image" to="$(arg image)"/>
+  </node>
+
+</launch>

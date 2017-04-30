@@ -1,0 +1,16 @@
+If you use GAZR for your academic work, please cite this paper:
+
+Lemaignan et al. "From Real-time Attention Assessment to “With-me-ness” in Human-Robot Interaction". HRI 2016.
+
+For LaTeX users, you can use this BibTeX entry:
+
+@inproceedings{lemaignan2016realtime,
+  author = {Lemaignan, S. and 
+            Garcia, F. and 
+            Jacq, A. and 
+            Dillenbourg, P.},
+  title = {From Real-time Attention Assessment to “With-me-ness” in Human-Robot Interaction},
+  booktitle = {Proceedings of the 2016 ACM/IEEE Human-Robot Interaction Conference},
+  year = {2016},
+  url = {http://github.com/severin-lemaignan/gazr}
+}
