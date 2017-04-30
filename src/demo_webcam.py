@@ -1,6 +1,9 @@
 #!/usr/bin/env python2
+import numpy as np
 import cv2
 import dlib
+import skimage
+import skimage.transform
 
 import util
 
@@ -21,15 +24,16 @@ while rval:
     framerate.tick()
     print(framerate.query())
     image = cv2.flip(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), 1)
-    dets = detector(image, 0)
+    small_image = cv2.resize(image, (0, 0), fx=0.25, fy=0.25)
+    dets = detector(small_image, 0)
 
     window.clear_overlay()
-    window.set_image(image)
+    window.set_image(small_image)
     print('Number of faces detected: {}'.format(len(dets)))
     for (k, d) in enumerate(dets):
         print('Detection {}: Left: {} Top: {} Right: {} Bottom: {}'.format(
             k, d.left(), d.top(), d.right(), d.bottom()))
-        shape = predictor(image, d)
+        shape = predictor(small_image, d)
         print('Part 0: {}, Part 1: {} ...'.format(shape.part(0), shape.part(1)))
         window.add_overlay(shape)
     window.add_overlay(dets)
