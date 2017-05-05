@@ -6,11 +6,7 @@ import time
 
 import numpy as np
 
-PACKAGE_PATH = path.dirname(sys.modules[__name__].__file__)
-ROOT_PATH = path.dirname(PACKAGE_PATH)
-MODEL_PATH = path.join(ROOT_PATH, 'ext', 'dlib', 'shape_predictor_68_face_landmarks.dat')
-
-class RingBuffer():
+class RingBuffer(object):
     """A 1-D ring buffer."""
     def __init__(self, length, dtype='f'):
         self.data = np.zeros(length, dtype=dtype)
@@ -32,6 +28,27 @@ class RingBuffer():
         """Gets the least recently added value in the buffer."""
         if self.length:
             return self.data[(self._index + 1) % self.length]
+        else:
+            return None
+
+# SIGNAL PROCESSING
+
+class SlidingWindowFilter(RingBuffer):
+    """A 1-D sliding window noise filter."""
+    def __init__(self, window_size):
+        super(SlidingWindowFilter, self).__init__(window_size)
+
+    def get_mean(self):
+        """Gets the mean of the values in the window."""
+        if self.length:
+            return np.mean(self.data[:self.length])
+        else:
+            return None
+
+    def get_median(self):
+        """Gets the median of the values in the window."""
+        if self.length:
+            return np.median(self.data[:self.length])
         else:
             return None
 

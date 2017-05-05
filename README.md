@@ -37,11 +37,11 @@ cd ../..
 Finally, compile Gazr:
 
 ```
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make
 ```
 
-Now you can run the `demo_gazr.py` script in the `src` directory.
+Now you can run the `demo_head_pose.py` script in the `src` directory.
 
 ### Install Vispy
 Vispy is used for the renderer.
@@ -55,7 +55,7 @@ sudo pip install pyglet
 Next, install the latest development of vispy:
 
 ```
-pip install -e git+https://github.com/vispy/vispy#egg=vispy-dev
+sudo pip install vispy
 ```
 
 Now you can run the `demo_vispy.py` script in the `src` directory.
