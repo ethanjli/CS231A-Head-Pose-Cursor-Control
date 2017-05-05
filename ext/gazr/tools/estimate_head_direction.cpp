@@ -21,9 +21,27 @@ inline double todeg(double rad) {
 }
 
 
+int countCameras()
+{
+    VideoCapture temp_camera;
+    int max_tested = 2;
+
+    for (int i = 0; i < max_tested; ++i) {
+        VideoCapture temp_camera(i);
+        bool res = (!temp_camera.isOpened());
+        temp_camera.release();
+        if (res) return i;
+    }
+
+    return max_tested;
+}
+
+
 int main(int argc, char **argv)
 {
+
     Mat frame;
+    
     bool show_frame = false;
     bool use_camera = false;
 
@@ -75,14 +93,14 @@ int main(int argc, char **argv)
     VideoCapture video_in;
 
     if (use_camera) {
-        video_in = VideoCapture(0);
+        video_in = VideoCapture(countCameras() - 1); // Prefers USB webcam over laptop webcam
 
         // adjust for your webcam!
-        video_in.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-        video_in.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
+        video_in.set(CV_CAP_PROP_FRAME_WIDTH, 170);
+        video_in.set(CV_CAP_PROP_FRAME_HEIGHT, 127.5);
         estimator.focalLength = 500;
-        estimator.opticalCenterX = 320;
-        estimator.opticalCenterY = 240;
+        estimator.opticalCenterX = 85;
+        estimator.opticalCenterY = 63.75;
 
         if(!video_in.isOpened()) {
             cerr << "Couldn't open camera" << endl;
@@ -150,7 +168,9 @@ int main(int argc, char **argv)
         cout << "}\n" << flush;
 
         if (show_frame) {
-            imshow("headpose", estimator._debug);
+            Mat flipped = estimator._debug.clone();
+            flip(estimator._debug, flipped, 1);
+            imshow("headpose", flipped);
             if(use_camera) {
                 waitKey(10);
             }
