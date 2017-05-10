@@ -1,0 +1,38 @@
+import os
+import sys
+
+import vispy.io
+import vispy.visuals
+import vispy.scene
+
+_PACKAGE_PATH = os.path.dirname(sys.modules[__name__].__file__)
+SHADERS_FOLDER = 'shaders'
+MODELS_FOLDER = 'models'
+
+class CustomVisual(vispy.visuals.Visual):
+    def __init__(self):
+        super(CustomVisual, self).__init__()
+
+    @staticmethod
+    def base_transform():
+        return vispy.visuals.transforms.AffineTransform()
+
+    def update_scale(self, pixel_scale):
+        pass
+
+def load_shader(shader_filename):
+    with open(os.path.join(_PACKAGE_PATH, SHADERS_FOLDER, shader_filename), 'r') as f:
+        shader = f.read()
+    return shader
+
+def load_shader_program(vertex_shader_filename, fragment_shader_filename):
+    vertex_shader = load_shader(vertex_shader_filename)
+    fragment_shader = load_shader(fragment_shader_filename)
+    return vispy.visuals.shaders.ModularProgram(vertex_shader, fragment_shader)
+
+def load_model(mesh_name):
+    mesh_filename = os.path.join(_PACKAGE_PATH, MODELS_FOLDER, mesh_name)
+    return vispy.io.read_mesh(mesh_filename)
+
+def create_visual_node(Visual):
+    return vispy.scene.visuals.create_visual_node(Visual)
