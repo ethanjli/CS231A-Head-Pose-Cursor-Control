@@ -1,7 +1,6 @@
 #!/usr/bin/env python2
 """Functions and classes for loading of data from Oxford datasets."""
 from os import path
-import sys
 import time
 
 import numpy as np
@@ -10,7 +9,7 @@ class RingBuffer(object):
     """A 1-D ring buffer."""
     def __init__(self, length, dtype='f'):
         self.data = np.zeros(length, dtype=dtype)
-        self._index = 0
+        self._index = -1
         self.length = 0
 
     def append(self, value):
@@ -30,6 +29,15 @@ class RingBuffer(object):
             return self.data[(self._index + 1) % self.length]
         else:
             return None
+
+    def get_continuous(self):
+        """Returns a copy of the buffer with elements in correct time order."""
+        if self.length < self.data.size:
+            return np.concatenate((self.data[:self._index + 1],
+                                   self.data[self._index + 1:]))[:self.length]
+        else:
+            return np.concatenate((self.data[self._index + 1:],
+                                   self.data[:self._index + 1]))
 
 # SIGNAL PROCESSING
 
