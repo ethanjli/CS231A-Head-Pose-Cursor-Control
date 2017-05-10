@@ -1,5 +1,6 @@
 import os
 import sys
+import threading
 
 import vispy.io
 import vispy.visuals
@@ -11,6 +12,7 @@ MODELS_FOLDER = 'models'
 
 class CustomVisual(vispy.visuals.Visual):
     def __init__(self):
+        self.__lock = threading.RLock()
         super(CustomVisual, self).__init__()
 
     @staticmethod
@@ -19,6 +21,13 @@ class CustomVisual(vispy.visuals.Visual):
 
     def update_scale(self, pixel_scale):
         pass
+
+    def update_transform(self, new_transform):
+        with self.__lock:
+            self.transform = new_transform
+
+    def get_lock(self):
+        return self.__lock
 
 def load_shader(shader_filename):
     with open(os.path.join(_PACKAGE_PATH, SHADERS_FOLDER, shader_filename), 'r') as f:

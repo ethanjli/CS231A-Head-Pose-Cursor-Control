@@ -30,11 +30,13 @@ class AsynchronousAnimator(object):
 
 class HeadPoseAnimator():
     """Asynchronously updates a rendering pipeline with head pose tracking."""
-    def __init__(self, yaw_multiplier=1, pitch_multiplier=-1):
+    def __init__(self, yaw_multiplier=1, pitch_multiplier=-1, roll_multiplier=-1):
         self._pipeline = None
+        self._visual_node = None
         self._head_pose = head_pose.HeadPose()
         self.yaw_multiplier = yaw_multiplier
         self.pitch_multiplier = pitch_multiplier
+        self.roll_multiplier = roll_multiplier
         self.framerate_counter = util.FramerateCounter()
 
     def register_rendering_pipeline(self, pipeline):
@@ -43,11 +45,13 @@ class HeadPoseAnimator():
         Threading:
             Instantiates a head pose tracking thread.
         """
-        self._camera = pipeline.camera
-        self._head_pose.monitor_async(self._update_camera)
+        self._head_pose.monitor_async(self._update_canvas)
         framerate_counter = visuals.text.FramerateCounter(
             pipeline, self.framerate_counter, 'headpose', 'updates/sec')
         pipeline.add_text(framerate_counter)
+
+    def register_visual_node(self, visual_node):
+        self._visual_node = visual_node
 
     def clean_up(self):
         """Stops updating a RenderingPipeline.
@@ -57,7 +61,8 @@ class HeadPoseAnimator():
         """
         self._head_pose.stop_monitoring()
 
-    def _update_camera(self, yaw, pitch):
-        self._camera.update_azimuth(self._head_pose.yaw * self.yaw_multiplier)
-        self._camera.update_elevation(self._head_pose.pitch * self.pitch_multiplier)
+    def _update_canvas(self, yaw, pitch, roll, x, y, z):
+        transform = self._visual_node.base_transform()
+        transform.rotate(roll * self.roll_multiplier, (0, 0, 1))
+        self._visual_node.transform = transform
         self.framerate_counter.tick()

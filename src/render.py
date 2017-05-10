@@ -159,9 +159,13 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
     # Event Handlers
     def on_resize(self, event):
         with self.camera.get_lock():
+            for (_, visual_node) in self.visual_nodes.items():
+                visual_node.get_lock().acquire()
             self._window_scale = self._window_scale * self.size[1] / self._central_widget.size[1]
             self._update_scale()
             super(RenderingPipeline, self).on_resize(event)
+            for (_, visual_node) in reversed(self.visual_nodes.items()):
+                visual_node.get_lock().release()
 
     def on_mouse_wheel(self, event):
         self._update_scale()
@@ -170,7 +174,11 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
         for text in self._texts:
             text.update()
         with self.camera.get_lock():
+            for (_, visual_node) in self.visual_nodes.items():
+                visual_node.get_lock().acquire()
             super(RenderingPipeline, self).on_draw(event)
+            for (_, visual_node) in reversed(self.visual_nodes.items()):
+                visual_node.get_lock().release()
 
     def on_key_press(self, event):
         if event.text == ' ':

@@ -12,6 +12,7 @@ import animation
 pipeline = render.RenderingPipeline()
 canvas = pipeline.instantiate_visual(visuals.canvas.CanvasVisual, 'checkerboard')
 head_pose_animator = animation.HeadPoseAnimator()
+head_pose_animator.register_visual_node(canvas)
 head_pose_animator.register_rendering_pipeline(pipeline)
 pipeline.start_rendering()
 head_pose_animator.clean_up()

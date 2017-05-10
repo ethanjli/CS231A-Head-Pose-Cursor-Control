@@ -19,15 +19,19 @@ _HEAD_POSE_TRACKER_ARGS = [_HEAD_POSE_TRACKER_PATH, '--show',
 
 class HeadPose():
     """Consumes head pose tracking stream from stdin and updates."""
-    def __init__(self, smoothing_pitch=10, smoothing_yaw=10,
+    def __init__(self, smoothing_pitch=10, smoothing_yaw=10, smoothing_roll=1,
                  smoothing_x=10, smoothing_y=10, smoothing_z=10):
         self.yaw = None
         self.pitch = None
+        self.roll = None
         self.x = None
+        self.y = None
+        self.z = None
         self.updated = False
 
         self._yaw_smoothing_filter = util.SlidingWindowFilter(smoothing_yaw)
         self._pitch_smoothing_filter = util.SlidingWindowFilter(smoothing_pitch)
+        self._roll_smoothing_filter = util.SlidingWindowFilter(smoothing_roll)
         self._x_smoothing_filter = util.SlidingWindowFilter(smoothing_x)
         self._y_smoothing_filter = util.SlidingWindowFilter(smoothing_y)
         self._z_smoothing_filter = util.SlidingWindowFilter(smoothing_z)
@@ -36,7 +40,7 @@ class HeadPose():
         self._monitor_thread = None
 
     def update(self, line=None):
-        """Synchronously updates yaw and pitch once from the stdin buffer.
+        """Synchronously updates yaw and pitch and roll once from the stdin buffer.
 
         Arguments:
             line: the head pose tracking stdout line. If None, will read from stdin.
@@ -51,6 +55,9 @@ class HeadPose():
             raw_pitch = data['face_0']['pitch'] - 180
             self._pitch_smoothing_filter.append(raw_pitch)
             self.pitch = self._pitch_smoothing_filter.get_median()
+            raw_roll = data['face_0']['roll'] - 180
+            self._roll_smoothing_filter.append(raw_roll)
+            self.roll = self._roll_smoothing_filter.get_median()
             raw_x = data['face_0']['y']
             self._x_smoothing_filter.append(raw_x)
             self.x = self._x_smoothing_filter.get_median()
@@ -60,7 +67,8 @@ class HeadPose():
             raw_z = data['face_0']['x']
             self._z_smoothing_filter.append(raw_z)
             self.z = self._z_smoothing_filter.get_median()
-        if self.pitch is not None and self.yaw is not None and self.x is not None:
+        if (self.pitch is not None and self.yaw is not None and self.roll is not None and
+                self.x is not None and self.y is not None and self.z is not None):
             self.updated = True
 
     def _start_tracker(self):
@@ -74,22 +82,22 @@ class HeadPose():
                                                  bufsize=1, close_fds=on_posix)
 
     def monitor_sync(self, callback=None):
-        """Synchronously updates yaw and pitch continuously from stdin.
+        """Synchronously updates yaw and pitch and roll continuously from stdin.
 
         Arguments:
-            callback: If provided, calls callback after each update with the yaw and pitch.
+            callback: If provided, calls callback after each update with the yaw and pitch and roll.
         """
         self._start_tracker()
         for line in iter(self._tracker_process.stdout.readline, b''):
             self.update(line)
             if self.updated:
-                callback(self.yaw, self.pitch)
+                callback(self.yaw, self.pitch, self.roll, self.x, self.y, self.z)
 
     def monitor_async(self, callback=None):
-        """Asynchronously updates yaw and pitch continuously from stdin.
+        """Asynchronously updates yaw and pitch and roll continuously from stdin.
 
         Arguments:
-            callback: If provided, calls callback after each update with the yaw and pitch.
+            callback: If provided, calls callback after each update with the yaw and pitch and roll.
         Threading:
             Instantiates a singleton thread named HeadPose.
         """
