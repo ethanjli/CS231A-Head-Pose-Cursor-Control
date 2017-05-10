@@ -8,7 +8,7 @@ import vispy.scene
 
 _PACKAGE_PATH = os.path.dirname(sys.modules[__name__].__file__)
 SHADERS_FOLDER = 'shaders'
-MODELS_FOLDER = 'models'
+TEXTURES_FOLDER = 'textures'
 
 class CustomVisual(vispy.visuals.Visual):
     def __init__(self):
@@ -39,9 +39,9 @@ def load_shader_program(vertex_shader_filename, fragment_shader_filename):
     fragment_shader = load_shader(fragment_shader_filename)
     return vispy.visuals.shaders.ModularProgram(vertex_shader, fragment_shader)
 
-def load_model(mesh_name):
-    mesh_filename = os.path.join(_PACKAGE_PATH, MODELS_FOLDER, mesh_name)
-    return vispy.io.read_mesh(mesh_filename)
+def load_texture(texture_name):
+    texture_filename = os.path.join(_PACKAGE_PATH, TEXTURES_FOLDER, texture_name)
+    return vispy.io.imread(texture_filename)
 
 def create_visual_node(Visual):
     return vispy.scene.visuals.create_visual_node(Visual)

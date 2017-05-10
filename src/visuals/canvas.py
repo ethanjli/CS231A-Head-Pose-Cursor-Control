@@ -21,7 +21,6 @@ class CanvasVisual(visuals.CustomVisual):
                                                                  (+1, -1), (+1, +1)])
         self.program.vert['texcoord'] = vispy.gloo.VertexBuffer([(0, 0), (1, 0),
                                                                  (0, 1), (1, 1)])
-        self.program['texture'] = checkerboard()
 
     def draw(self, transforms):
         visual_to_doc = transforms.visual_to_document
@@ -40,4 +39,14 @@ class CanvasVisual(visuals.CustomVisual):
 
     def set_frag_param(self, key, value):
         self.program.frag[key] = value
+
+class CheckerboardVisual(CanvasVisual):
+    def __init__(self):
+        super(CheckerboardVisual, self).__init__()
+        self.program['texture'] = checkerboard()
+
+class TextureVisual(CanvasVisual):
+    def __init__(self, texture_name='text.png'):
+        super(TextureVisual, self).__init__()
+        self.program['texture'] = visuals.load_texture(texture_name)
 
