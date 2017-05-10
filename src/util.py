@@ -39,27 +39,6 @@ class RingBuffer(object):
             return np.concatenate((self.data[self._index + 1:],
                                    self.data[:self._index + 1]))
 
-# SIGNAL PROCESSING
-
-class SlidingWindowFilter(RingBuffer):
-    """A 1-D sliding window noise filter."""
-    def __init__(self, window_size):
-        super(SlidingWindowFilter, self).__init__(window_size)
-
-    def get_mean(self):
-        """Gets the mean of the values in the window."""
-        if self.length:
-            return np.mean(self.data[:self.length])
-        else:
-            return None
-
-    def get_median(self):
-        """Gets the median of the values in the window."""
-        if self.length:
-            return np.median(self.data[:self.length])
-        else:
-            return None
-
 class FramerateCounter():
     """A frame rate counter."""
     def __init__(self, smoothing_window_size=120):

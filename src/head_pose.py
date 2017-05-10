@@ -7,7 +7,7 @@ try:
 except ImportError:
     from queue import Queue, Empty
 
-import util
+import signal_processing
 
 _PACKAGE_PATH = path.dirname(sys.modules[__name__].__file__)
 _ROOT_PATH = path.dirname(_PACKAGE_PATH)
@@ -19,7 +19,7 @@ _HEAD_POSE_TRACKER_ARGS = [_HEAD_POSE_TRACKER_PATH, '--show',
 
 class HeadPose():
     """Consumes head pose tracking stream from stdin and updates."""
-    def __init__(self, smoothing_pitch=10, smoothing_yaw=10, smoothing_roll=1,
+    def __init__(self, smoothing_pitch=10, smoothing_yaw=10, smoothing_roll=10,
                  smoothing_x=10, smoothing_y=10, smoothing_z=10):
         self.yaw = None
         self.pitch = None
@@ -29,12 +29,13 @@ class HeadPose():
         self.z = None
         self.updated = False
 
-        self._yaw_smoothing_filter = util.SlidingWindowFilter(smoothing_yaw)
-        self._pitch_smoothing_filter = util.SlidingWindowFilter(smoothing_pitch)
-        self._roll_smoothing_filter = util.SlidingWindowFilter(smoothing_roll)
-        self._x_smoothing_filter = util.SlidingWindowFilter(smoothing_x)
-        self._y_smoothing_filter = util.SlidingWindowFilter(smoothing_y)
-        self._z_smoothing_filter = util.SlidingWindowFilter(smoothing_z)
+        self._yaw_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_yaw)
+        self._pitch_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_pitch)
+        self._roll_smoothing_filter = signal_processing.SlidingWindowFilter(
+            smoothing_roll, estimation_mode='ransac_linear')
+        self._x_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_x)
+        self._y_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_y)
+        self._z_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_z)
 
         self._tracker_process = None
         self._monitor_thread = None
@@ -51,22 +52,22 @@ class HeadPose():
         if "face_0" in data:
             raw_yaw = data['face_0']['yaw'] - 180
             self._yaw_smoothing_filter.append(raw_yaw)
-            self.yaw = self._yaw_smoothing_filter.get_median()
+            self.yaw = self._yaw_smoothing_filter.estimate_current()
             raw_pitch = data['face_0']['pitch'] - 180
             self._pitch_smoothing_filter.append(raw_pitch)
-            self.pitch = self._pitch_smoothing_filter.get_median()
-            raw_roll = data['face_0']['roll'] - 180
+            self.pitch = self._pitch_smoothing_filter.estimate_current()
+            raw_roll = data['face_0']['roll'] + 90
             self._roll_smoothing_filter.append(raw_roll)
-            self.roll = self._roll_smoothing_filter.get_median()
+            self.roll = self._roll_smoothing_filter.estimate_current()
             raw_x = data['face_0']['y']
             self._x_smoothing_filter.append(raw_x)
-            self.x = self._x_smoothing_filter.get_median()
+            self.x = self._x_smoothing_filter.estimate_current()
             raw_y = data['face_0']['z']
             self._y_smoothing_filter.append(raw_y)
-            self.y = self._y_smoothing_filter.get_median()
+            self.y = self._y_smoothing_filter.estimate_current()
             raw_z = data['face_0']['x']
             self._z_smoothing_filter.append(raw_z)
-            self.z = self._z_smoothing_filter.get_median()
+            self.z = self._z_smoothing_filter.estimate_current()
         if (self.pitch is not None and self.yaw is not None and self.roll is not None and
                 self.x is not None and self.y is not None and self.z is not None):
             self.updated = True
