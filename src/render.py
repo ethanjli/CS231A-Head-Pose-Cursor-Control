@@ -26,13 +26,13 @@ class AdjustableCamera(vispy.scene.cameras.TurntableCamera):
     """
     def __init__(self):
         self.__fov = 30
-        self.elevation_offset = 6
+        self.elevation_offset = 0
         self.__elevation = self.elevation_offset
         self.azimuth_offset = 90
         self.__azimuth = self.azimuth_offset
-        self.distance_offset = 30
+        self.distance_offset = 10
         self.__distance = self.distance_offset
-        self.center_offset = np.array([0, 1.8, 2.3])
+        self.center_offset = np.array([0, 0, 0])
         self.__center = self.center_offset
         self.__lock = threading.RLock()
         super(AdjustableCamera, self).__init__(
