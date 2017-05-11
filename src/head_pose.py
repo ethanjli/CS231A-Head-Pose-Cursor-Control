@@ -6,6 +6,7 @@ try:
     from Queue import Queue, Empty
 except ImportError:
     from queue import Queue, Empty
+import scipy.signal
 import numpy as np
 
 import signal_processing
@@ -20,7 +21,7 @@ _HEAD_POSE_TRACKER_ARGS = [_HEAD_POSE_TRACKER_PATH, '--show',
 
 class HeadPose():
     """Consumes head pose tracking stream from stdin and updates."""
-    def __init__(self, smoothing_pitch=10, smoothing_yaw=10, smoothing_roll=30,
+    def __init__(self, smoothing_pitch=10, smoothing_yaw=10, smoothing_roll=10,
                  smoothing_x=10, smoothing_y=10, smoothing_z=10):
         self.yaw = None
         self.pitch = None
@@ -30,11 +31,13 @@ class HeadPose():
         self.z = None
         self.updated = False
 
+        gaussian_window = signal_processing.normalize_window(scipy.signal.gaussian(7, 2))
+        print gaussian_window
         self._yaw_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_yaw)
         self._pitch_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_pitch)
         self._roll_smoothing_filter = signal_processing.SlidingWindowFilter(
-            smoothing_roll, smoothing_mode=('convolve', np.hanning(5)),
-            estimation_mode=('poly', 2))
+            smoothing_roll, smoothing_mode=('convolve', gaussian_window),
+            estimation_mode=('poly', 1))
         self._x_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_x)
         self._y_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_y)
         self._z_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_z)
