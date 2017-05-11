@@ -31,13 +31,13 @@ class HeadPose():
         self.z = None
         self.updated = False
 
-        gaussian_window = signal_processing.normalize_window(scipy.signal.gaussian(7, 2))
-        print gaussian_window
+        half_gaussian_window = signal_processing.normalize_window(scipy.signal.gaussian(
+            2 * smoothing_roll, 4.0)[:smoothing_roll])
+        print half_gaussian_window
         self._yaw_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_yaw)
         self._pitch_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_pitch)
         self._roll_smoothing_filter = signal_processing.SlidingWindowFilter(
-            smoothing_roll, smoothing_mode=('convolve', gaussian_window),
-            estimation_mode=('poly', 1))
+            smoothing_roll, estimation_mode=('kernel', half_gaussian_window))
         self._x_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_x)
         self._y_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_y)
         self._z_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_z)
@@ -64,6 +64,7 @@ class HeadPose():
             raw_roll = data['face_0']['roll'] + 90
             self._roll_smoothing_filter.append(raw_roll)
             self.roll = self._roll_smoothing_filter.estimate_current()
+            print '{},{}'.format(self._roll_smoothing_filter.get_head(), self.roll)
             raw_x = data['face_0']['y']
             self._x_smoothing_filter.append(raw_x)
             self.x = self._x_smoothing_filter.estimate_current()

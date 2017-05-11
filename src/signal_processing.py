@@ -42,6 +42,8 @@ class SlidingWindowFilter(util.RingBuffer):
             values = smooth(values, self.smoothing_mode)
             if isinstance(self.estimation_mode, tuple) and self.estimation_mode[0] == 'poly':
                 return estimate_poly(times, values, self.estimation_mode[1])
+            elif isinstance(self.estimation_mode, tuple) and self.estimation_mode[0] == 'kernel':
+                return np.dot(self.estimation_mode[1], values)
 
     def get_mean(self):
         """Gets the mean of the values in the window."""
