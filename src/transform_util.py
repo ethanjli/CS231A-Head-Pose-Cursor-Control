@@ -32,14 +32,16 @@ class Calibration:
       ])
     # Order is roll -> pitch -> yaw
     T = R_yaw.dot(R_pitch)
-    
+
     z_hat2 = T.dot(z_hat)
     y_hat2 = T.dot(y_hat)
     x_hat2 = np.cross(y_hat2, z_hat2)
 
     # New camera position
-    O2 = np.array([self.x, self.y, self.z]) \
-      - z * z_hat2 - y * y_hat2 - x * x_hat2
+    #O2 = np.array([self.x, self.y, self.z]) \
+    #  - z * z_hat2 - y * y_hat2 - x * x_hat2
+    #O2 = np.array([x, y, z])
+    O2 = np.array([x - self.x, y - self.y, z - self.z])
 
     p2 = np.array([screen_x, screen_y, 0.])
     p2[2] = (z_hat2.dot(O2) - z_hat2[:2].dot(p2[:2])) / z_hat2[2]

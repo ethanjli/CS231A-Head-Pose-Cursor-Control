@@ -33,14 +33,18 @@ class HeadPose():
 
         half_gaussian_window = signal_processing.normalize_window(scipy.signal.gaussian(
             2 * smoothing_roll, 4.0)[:smoothing_roll])
-        print half_gaussian_window
-        self._yaw_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_yaw)
-        self._pitch_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_pitch)
+        self._yaw_smoothing_filter = signal_processing.SlidingWindowFilter(
+            smoothing_yaw, estimation_mode=('kernel', half_gaussian_window))
+        self._pitch_smoothing_filter = signal_processing.SlidingWindowFilter(
+            smoothing_pitch, estimation_mode=('kernel', half_gaussian_window))
         self._roll_smoothing_filter = signal_processing.SlidingWindowFilter(
             smoothing_roll, estimation_mode=('kernel', half_gaussian_window))
-        self._x_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_x)
-        self._y_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_y)
-        self._z_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_z)
+        self._x_smoothing_filter = signal_processing.SlidingWindowFilter(
+            smoothing_x, estimation_mode=('kernel', half_gaussian_window))
+        self._y_smoothing_filter = signal_processing.SlidingWindowFilter(
+            smoothing_y, estimation_mode=('kernel', half_gaussian_window))
+        self._z_smoothing_filter = signal_processing.SlidingWindowFilter(
+            smoothing_z, estimation_mode=('kernel', half_gaussian_window))
 
         self._tracker_process = None
         self._monitor_thread = None

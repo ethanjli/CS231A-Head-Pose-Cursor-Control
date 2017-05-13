@@ -17,8 +17,7 @@ class CanvasVisual(visuals.CustomVisual):
         super(CanvasVisual, self).__init__()
         self.program = visuals.load_shader_program(VERTEX_SHADER_FILENAME,
                                                    FRAGMENT_SHADER_FILENAME)
-        self.program.vert['position'] = vispy.gloo.VertexBuffer([(-1, -1), (-1, +1),
-                                                                 (+1, -1), (+1, +1)])
+        self.program.vert['position'] = vispy.gloo.VertexBuffer([self.get_base_vertices()])
         self.program.vert['texcoord'] = vispy.gloo.VertexBuffer([(0, 0), (1, 0),
                                                                  (0, 1), (1, 1)])
 
@@ -39,6 +38,12 @@ class CanvasVisual(visuals.CustomVisual):
 
     def set_frag_param(self, key, value):
         self.program.frag[key] = value
+
+    def get_base_vertices(self):
+        return [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+
+    def update_vertices(self, vertices):
+        self.program.vert['position'] = vispy.gloo.VertexBuffer(vertices)
 
 class CheckerboardVisual(CanvasVisual):
     def __init__(self):
