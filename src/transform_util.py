@@ -3,7 +3,7 @@ import numpy as np
 class Calibration:
   # Pitch, yaw, roll in degrees
   # (x, y, z) is calibrated initial position
-  def __init__(self, pitch, yaw, roll, x, y, z):
+  def __init__(self, pitch=0, yaw=0, roll=0, x=0, y=0, z=0):
     self.pitch, self.yaw, self.roll = pitch, yaw, roll
     self.x, self.y, self.z = x, y, z
 
