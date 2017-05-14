@@ -6,7 +6,6 @@ try:
     from Queue import Queue, Empty
 except ImportError:
     from queue import Queue, Empty
-import scipy.signal
 import numpy as np
 
 import signal_processing
@@ -31,13 +30,16 @@ class HeadPose():
         self.z = None
         self.updated = False
 
-        half_gaussian_window = signal_processing.normalize_window(scipy.signal.gaussian(
-            2 * smoothing_roll, 4.0)[:smoothing_roll])
-        print half_gaussian_window
+        roll_window = signal_processing.half_gaussian_window(smoothing_roll, 2.0)
+        print roll_window
         self._yaw_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_yaw)
         self._pitch_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_pitch)
-        self._roll_smoothing_filter = signal_processing.SlidingWindowFilter(
-            smoothing_roll, estimation_mode=('kernel', half_gaussian_window))
+        #self._roll_smoothing_filter = signal_processing.SlidingWindowFilter(
+        #    smoothing_roll, estimation_mode=('kernel', half_gaussian_window))
+        self._roll_smoothing_filter = signal_processing.SlidingWindowThresholdFilter(
+            smoothing_roll, threshold=0.5, nonstationary_transition_smoothness=4,
+            smoothing_mode=('convolve', signal_processing.gaussian_window(7, 2.0)),
+            estimation_mode=('poly', 4))
         self._x_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_x)
         self._y_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_y)
         self._z_smoothing_filter = signal_processing.SlidingWindowFilter(smoothing_z)
