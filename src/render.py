@@ -9,6 +9,7 @@ import vispy.scene
 import vispy.visuals
 
 import visuals
+import visuals.axes
 
 _PACKAGE_PATH = os.path.dirname(sys.modules[__name__].__file__)
 
@@ -111,9 +112,8 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
 
     # Initialization
     def _add_axes(self):
-        self.axes = vispy.scene.visuals.XYZAxis(parent=self.get_scene())
-        self.axes.transform = vispy.visuals.transforms.AffineTransform()
-        self.axes.transform.scale((5, 5, 5))
+        self.axes = self.instantiate_visual(visuals.axes.AxesVisual, 'axes',
+                                            create_visual_node=False)
 
     # Rendering
     def start_rendering(self):
@@ -123,8 +123,11 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
         self.show()
         vispy.app.run()
 
-    def instantiate_visual(self, Visual, name):
-        VisualNode = visuals.visuals.create_visual_node(Visual)
+    def instantiate_visual(self, Visual, name, create_visual_node=True):
+        if create_visual_node:
+            VisualNode = visuals.visuals.create_visual_node(Visual)
+        else:
+            VisualNode = Visual
         visual_node = VisualNode(parent=self.get_scene())
         self.visual_nodes[name] = visual_node
         visual_node.transform = visual_node.base_transform()
