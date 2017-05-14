@@ -82,8 +82,8 @@ class SlidingWindowFilter(util.RingBuffer):
         return (times, values)
 
 class SlidingWindowThresholdFilter(SlidingWindowFilter):
-    def __init__(self, window_size, threshold, nonstationary_transition_smoothness=0,
-                 smoothing_mode=None, estimation_mode='raw'):
+    def __init__(self, window_size=8, threshold=0, nonstationary_transition_smoothness=3,
+                 smoothing_mode=('convolve', gaussian_window(7, 2.0)), estimation_mode=('poly', 4)):
         super(SlidingWindowThresholdFilter, self).__init__(window_size, smoothing_mode, estimation_mode)
         self.threshold = threshold
         self._stationary_value = None

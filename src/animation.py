@@ -8,11 +8,11 @@ import vispy.visuals
 import visuals.text
 
 _HEAD_POSE_POSTPROCESSORS = {
-    'yaw': lambda value: value,
+    'yaw': lambda value: -1 * value,
     'pitch': lambda value: -1 * value,
     'roll': lambda value: -1 * value,
     'x': lambda value: value,
-    'y': lambda value: value,
+    'y': lambda value: -1 * value,
     'z': lambda value: value
 }
 
@@ -87,7 +87,7 @@ class ScreenStabilizer(HeadPoseAnimator):
         super(ScreenStabilizer, self).__init__(head_pose_postprocessors)
         self.state = 'ready'
         self.calibration = None
-        self._calibration = transform_util.Calibration(180, 180, 0, -0.13, -0.2, 1.3)
+        self._calibration = None
         self._head_pose = head_pose.HeadPose(_CALIBRATION_FILTERS)
         self._head_visual_node = None
 
@@ -138,12 +138,12 @@ class ScreenStabilizer(HeadPoseAnimator):
 
     def _update_head_visual_node(self, parameters):
         transform = self._head_visual_node.base_transform()
-        self.calibration = {parameter: value for (parameter, value) in parameters.items()}
         postprocessed = {parameter: self.head_pose_postprocessors[parameter](value)
                         for (parameter, value) in parameters.items()}
+        self.calibration = {parameter: value for (parameter, value) in postprocessed.items()}
         print('Postprocessed: {}'.format({parameter: round(value, 2)
                                           for (parameter, value) in postprocessed.items()}))
-        transform.rotate(postprocessed['roll'], (0, 0, 1))
+        transform.translate((0, postprocessed['y'], 0))
         self._head_visual_node.transform = transform
         self.framerate_counter.tick()
 
@@ -153,9 +153,12 @@ class ScreenStabilizer(HeadPoseAnimator):
                         for (parameter, value) in parameters.items()}
         print('Postprocessed: {}'.format({parameter: round(value, 2)
                                           for (parameter, value) in postprocessed.items()}))
-        transformed_vertices = [self._calibration.transform(
-                                    base_vertex[0], base_vertex[1], **postprocessed)
-                                for base_vertex in base_vertices]
-        self._visual_node.update_vertices(transformed_vertices)
+        transform = self._visual_node.base_transform()
+        transform.translate((0, postprocessed['y'] - self.calibration.y, 0))
+        self._visual_node.transform = transform
+        #transformed_vertices = [self.calibration.transform(
+        #                            base_vertex[0], base_vertex[1], **postprocessed)
+        #                        for base_vertex in base_vertices]
+        #self._visual_node.update_vertices(transformed_vertices)
         self.framerate_counter.tick()
         self._pipeline.update()

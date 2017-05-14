@@ -19,11 +19,20 @@ _HEAD_POSE_TRACKER_ARGS = [_HEAD_POSE_TRACKER_PATH, '--show',
                            '--model', _HEAD_POSE_MODEL_PATH]
 
 PARAMETERS = ['yaw', 'pitch', 'roll', 'x', 'y', 'z']
-DEFAULT_FILTERS = {parameter: signal_processing.SlidingWindowThresholdFilter(
-                       10, threshold=0.5, nonstationary_transition_smoothness=4,
-                       smoothing_mode=('convolve', signal_processing.gaussian_window(7, 2.0)),
-                       estimation_mode=('poly', 4))
-                   for parameter in PARAMETERS}
+DEFAULT_ANGLE_PARAMETERS = {
+    'window_size': 10,
+    'threshold': 0.5,
+    'nonstationary_transition_smoothness': 4,
+}
+DEFAULT_FILTERS = {
+    'yaw': signal_processing.SlidingWindowThresholdFilter(**DEFAULT_ANGLE_PARAMETERS),
+    'pitch': signal_processing.SlidingWindowThresholdFilter(window_size=10, threshold=1,
+                                                            nonstationary_transition_smoothness=4),
+    'roll': signal_processing.SlidingWindowThresholdFilter(**DEFAULT_ANGLE_PARAMETERS),
+    'x': signal_processing.SlidingWindowThresholdFilter(threshold=0.01),
+    'y': signal_processing.SlidingWindowThresholdFilter(threshold=0.018),
+    'z': signal_processing.SlidingWindowThresholdFilter()
+}
 
 class HeadPose():
     """Consumes head pose tracking stream from stdin and updates."""
