@@ -97,6 +97,7 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
 
         self.visual_nodes = {}
         self._timers = []
+        self._key_press_observers = []
         self._window_scale = 1.0
         self.transformSystem = vispy.visuals.transforms.TransformSystem(self)
 
@@ -110,9 +111,9 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
 
     # Initialization
     def _add_axes(self):
-        self._axes = vispy.scene.visuals.XYZAxis(parent=self.get_scene())
-        self._axes.transform = vispy.visuals.transforms.AffineTransform()
-        self._axes.transform.scale((5, 5, 5))
+        self.axes = vispy.scene.visuals.XYZAxis(parent=self.get_scene())
+        self.axes.transform = vispy.visuals.transforms.AffineTransform()
+        self.axes.transform.scale((5, 5, 5))
 
     # Rendering
     def start_rendering(self):
@@ -156,6 +157,9 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
         timer = vispy.app.Timer('auto', connect=timer_observer.execute)
         self._timers.append(timer)
 
+    def register_key_press_observer(self, key_press_observer):
+        self._key_press_observers.append(key_press_observer)
+
     # Event Handlers
     def on_resize(self, event):
         with self.camera.get_lock():
@@ -181,6 +185,8 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
                 visual_node.get_lock().release()
 
     def on_key_press(self, event):
+        for observer in self._key_press_observers:
+            observer.on_key_press(event)
         if event.text == ' ':
             for timer in self._timers:
                 if timer.running:
