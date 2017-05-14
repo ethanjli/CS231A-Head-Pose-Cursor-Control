@@ -6,7 +6,6 @@ try:
     from Queue import Queue, Empty
 except ImportError:
     from queue import Queue, Empty
-import scipy.signal
 import numpy as np
 
 import signal_processing
@@ -19,38 +18,25 @@ _HEAD_POSE_MODEL_PATH = path.join(_ROOT_PATH, 'ext', 'dlib', 'shape_predictor_68
 _HEAD_POSE_TRACKER_ARGS = [_HEAD_POSE_TRACKER_PATH, '--show',
                            '--model', _HEAD_POSE_MODEL_PATH]
 
+PARAMETERS = ['yaw', 'pitch', 'roll', 'x', 'y', 'z']
+DEFAULT_FILTERS = {parameter: signal_processing.SlidingWindowThresholdFilter(
+                       10, threshold=0.5, nonstationary_transition_smoothness=4,
+                       smoothing_mode=('convolve', signal_processing.gaussian_window(7, 2.0)),
+                       estimation_mode=('poly', 4))
+                   for parameter in PARAMETERS}
+
 class HeadPose():
     """Consumes head pose tracking stream from stdin and updates."""
-    def __init__(self, smoothing_pitch=10, smoothing_yaw=10, smoothing_roll=10,
-                 smoothing_x=10, smoothing_y=10, smoothing_z=10):
-        self.yaw = None
-        self.pitch = None
-        self.roll = None
-        self.x = None
-        self.y = None
-        self.z = None
+    def __init__(self, filters=DEFAULT_FILTERS):
+        self.parameters = {parameter: None for parameter in PARAMETERS}
+        self.filters = filters
         self.updated = False
-
-        half_gaussian_window = signal_processing.normalize_window(scipy.signal.gaussian(
-            2 * smoothing_roll, 4.0)[:smoothing_roll])
-        self._yaw_smoothing_filter = signal_processing.SlidingWindowFilter(
-            smoothing_yaw, estimation_mode=('kernel', half_gaussian_window))
-        self._pitch_smoothing_filter = signal_processing.SlidingWindowFilter(
-            smoothing_pitch, estimation_mode=('kernel', half_gaussian_window))
-        self._roll_smoothing_filter = signal_processing.SlidingWindowFilter(
-            smoothing_roll, estimation_mode=('kernel', half_gaussian_window))
-        self._x_smoothing_filter = signal_processing.SlidingWindowFilter(
-            smoothing_x, estimation_mode=('kernel', half_gaussian_window))
-        self._y_smoothing_filter = signal_processing.SlidingWindowFilter(
-            smoothing_y, estimation_mode=('kernel', half_gaussian_window))
-        self._z_smoothing_filter = signal_processing.SlidingWindowFilter(
-            smoothing_z, estimation_mode=('kernel', half_gaussian_window))
 
         self._tracker_process = None
         self._monitor_thread = None
 
     def update(self, line=None):
-        """Synchronously updates yaw and pitch and roll once from the stdin buffer.
+        """Synchronously updates parameters once from the stdin buffer.
 
         Arguments:
             line: the head pose tracking stdout line. If None, will read from stdin.
@@ -59,28 +45,18 @@ class HeadPose():
             line = sys.stdin.readline()
         data = eval(line)
         if "face_0" in data:
-            raw_yaw = data['face_0']['yaw'] - 180
-            self._yaw_smoothing_filter.append(raw_yaw)
-            self.yaw = self._yaw_smoothing_filter.estimate_current()
-            raw_pitch = data['face_0']['pitch'] - 180
-            self._pitch_smoothing_filter.append(raw_pitch)
-            self.pitch = self._pitch_smoothing_filter.estimate_current()
-            raw_roll = data['face_0']['roll'] + 90
-            self._roll_smoothing_filter.append(raw_roll)
-            self.roll = self._roll_smoothing_filter.estimate_current()
-            print '{},{}'.format(self._roll_smoothing_filter.get_head(), self.roll)
-            raw_x = data['face_0']['y']
-            self._x_smoothing_filter.append(raw_x)
-            self.x = self._x_smoothing_filter.estimate_current()
-            raw_y = data['face_0']['z']
-            self._y_smoothing_filter.append(raw_y)
-            self.y = self._y_smoothing_filter.estimate_current()
-            raw_z = data['face_0']['x']
-            self._z_smoothing_filter.append(raw_z)
-            self.z = self._z_smoothing_filter.estimate_current()
-        if (self.pitch is not None and self.yaw is not None and self.roll is not None and
-                self.x is not None and self.y is not None and self.z is not None):
-            self.updated = True
+            raw_data = {
+                'yaw': data['face_0']['yaw'] - 180,
+                'pitch': data['face_0']['pitch'] - 180,
+                'roll': data['face_0']['roll'] + 90,
+                'x': data['face_0']['y'],
+                'y': data['face_0']['z'],
+                'z': data['face_0']['x']
+            }
+            for (parameter, raw_value) in raw_data.items():
+                self.filters[parameter].append(raw_value)
+                self.parameters[parameter] = self.filters[parameter].estimate_current()
+        self.updated = all(filtered_value is not None for filtered_value in self.parameters.values())
 
     def _start_tracker(self):
         """Starts the external head pose tracking program.
@@ -93,22 +69,22 @@ class HeadPose():
                                                  bufsize=1, close_fds=on_posix)
 
     def monitor_sync(self, callback=None):
-        """Synchronously updates yaw and pitch and roll continuously from stdin.
+        """Synchronously updates parameters continuously from stdin.
 
         Arguments:
-            callback: If provided, calls callback after each update with the yaw and pitch and roll.
+            callback: If provided, calls callback after each update with the parameters.
         """
         self._start_tracker()
         for line in iter(self._tracker_process.stdout.readline, b''):
             self.update(line)
             if self.updated:
-                callback(self.yaw, self.pitch, self.roll, self.x, self.y, self.z)
+                callback(self.parameters)
 
     def monitor_async(self, callback=None):
-        """Asynchronously updates yaw and pitch and roll continuously from stdin.
+        """Asynchronously updates parameters continuously from stdin.
 
         Arguments:
-            callback: If provided, calls callback after each update with the yaw and pitch and roll.
+            callback: If provided, calls callback after each update with the parameters.
         Threading:
             Instantiates a singleton thread named HeadPose.
         """

@@ -8,7 +8,14 @@ import numpy as np
 class RingBuffer(object):
     """A 1-D ring buffer."""
     def __init__(self, length, dtype='f'):
+        if length == 0:
+            raise ValueError('RingBuffer length must be a positive number!')
         self.data = np.zeros(length, dtype=dtype)
+        self._index = -1
+        self.length = 0
+
+    def reset(self):
+        self.data = np.zeros(self.data.shape[0], dtype=self.data.dtype)
         self._index = -1
         self.length = 0
 
@@ -55,4 +62,7 @@ class FramerateCounter():
         if frames <= 1:
             return None
         return frames / (current_time - earliest_time)
+
+    def reset(self):
+        self._buffer.reset()
 

@@ -9,6 +9,7 @@ import vispy.scene
 import vispy.visuals
 
 import visuals
+import visuals.axes
 
 _PACKAGE_PATH = os.path.dirname(sys.modules[__name__].__file__)
 
@@ -97,6 +98,7 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
 
         self.visual_nodes = {}
         self._timers = []
+        self._key_press_observers = []
         self._window_scale = 1.0
         self.transformSystem = vispy.visuals.transforms.TransformSystem(self)
 
@@ -110,9 +112,8 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
 
     # Initialization
     def _add_axes(self):
-        self._axes = vispy.scene.visuals.XYZAxis(parent=self.get_scene())
-        self._axes.transform = vispy.visuals.transforms.AffineTransform()
-        self._axes.transform.scale((5, 5, 5))
+        self.axes = self.instantiate_visual(visuals.axes.AxesVisual, 'axes',
+                                            create_visual_node=False)
 
     # Rendering
     def start_rendering(self):
@@ -122,8 +123,11 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
         self.show()
         vispy.app.run()
 
-    def instantiate_visual(self, Visual, name):
-        VisualNode = visuals.visuals.create_visual_node(Visual)
+    def instantiate_visual(self, Visual, name, create_visual_node=True):
+        if create_visual_node:
+            VisualNode = visuals.visuals.create_visual_node(Visual)
+        else:
+            VisualNode = Visual
         visual_node = VisualNode(parent=self.get_scene())
         self.visual_nodes[name] = visual_node
         visual_node.transform = visual_node.base_transform()
@@ -156,6 +160,9 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
         timer = vispy.app.Timer('auto', connect=timer_observer.execute)
         self._timers.append(timer)
 
+    def register_key_press_observer(self, key_press_observer):
+        self._key_press_observers.append(key_press_observer)
+
     # Event Handlers
     def on_resize(self, event):
         with self.camera.get_lock():
@@ -181,6 +188,8 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
                 visual_node.get_lock().release()
 
     def on_key_press(self, event):
+        for observer in self._key_press_observers:
+            observer.on_key_press(event)
         if event.text == ' ':
             for timer in self._timers:
                 if timer.running:

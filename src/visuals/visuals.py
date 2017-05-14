@@ -11,9 +11,9 @@ SHADERS_FOLDER = 'shaders'
 TEXTURES_FOLDER = 'textures'
 
 class CustomVisual(vispy.visuals.Visual):
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         self.__lock = threading.RLock()
-        super(CustomVisual, self).__init__()
+        super(CustomVisual, self).__init__(*args, **kwargs)
 
     @staticmethod
     def base_transform():

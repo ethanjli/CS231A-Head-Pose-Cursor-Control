@@ -1,10 +1,10 @@
 import vispy.scene
 
 class Text(object):
-    def __init__(self, pipeline):
+    def __init__(self, pipeline, initial_text='', font_size=8, color='red'):
         self.transformSystem = pipeline.transformSystem
         self.visual = vispy.scene.visuals.Text(
-            '', parent=pipeline.scene, font_size=8, color='red',
+            initial_text, parent=pipeline.scene, font_size=font_size, color=color,
             anchor_x='left', anchor_y='top')
 
     def set_position(self, position):
@@ -14,7 +14,7 @@ class Text(object):
         return self.visual.font_size
 
     def update(self):
-        pass
+        self.visual.draw(self.transformSystem)
 
 class FramerateCounter(Text):
     def __init__(self, pipeline, framerate_counter, name='framerate', units='fps'):
