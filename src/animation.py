@@ -1,8 +1,24 @@
 import threading
 
-import head_pose
+import vispy.visuals
+
 import util
+import signal_processing
+import head_pose
 import visuals.text
+
+_HEAD_POSE_POSTPROCESSORS = {
+    'yaw': lambda value: value,
+    'pitch': lambda value: -1 * value,
+    'roll': lambda value: -1 * value,
+    'x': lambda value: value,
+    'y': lambda value: value,
+    'z': lambda value: value
+}
+
+_CALIBRATION_FILTERS = {signal_processing.SlidingWindowFilter(
+                            10, estimation_mode=('kernel', signal_processing.half_gaussian_window(10, 4.0)))
+                        for parameter in head_pose.PARAMETERS}
 
 class AsynchronousAnimator(object):
     """Abstract class for animators which run asynchronously in a thread."""
@@ -28,30 +44,25 @@ class AsynchronousAnimator(object):
             self._animator_thread.join()
             self._animator_thread = None
 
-class HeadPoseAnimator():
+class HeadPoseAnimator(object):
     """Asynchronously updates a rendering pipeline with head pose tracking."""
-    def __init__(self, yaw_multiplier=1, pitch_multiplier=-1, roll_multiplier=-1):
+    def __init__(self, head_pose_postprocessors=_HEAD_POSE_POSTPROCESSORS):
         self._pipeline = None
         self._visual_node = None
         self._head_pose = head_pose.HeadPose()
-        self.yaw_multiplier = yaw_multiplier
-        self.pitch_multiplier = pitch_multiplier
-        self.roll_multiplier = roll_multiplier
+        self.head_pose_postprocessors = head_pose_postprocessors
         self.framerate_counter = util.FramerateCounter()
 
     def register_rendering_pipeline(self, pipeline):
-        """Starts updating a RenderingPipeline.
-
-        Threading:
-            Instantiates a head pose tracking thread.
-        """
-        self._head_pose.monitor_async(self._update_canvas)
         framerate_counter = visuals.text.FramerateCounter(
             pipeline, self.framerate_counter, 'headpose', 'updates/sec')
         pipeline.add_text(framerate_counter)
 
     def register_visual_node(self, visual_node):
         self._visual_node = visual_node
+
+    def animate_async(self):
+        self._head_pose.monitor_async(self._update_canvas)
 
     def clean_up(self):
         """Stops updating a RenderingPipeline.
@@ -61,8 +72,10 @@ class HeadPoseAnimator():
         """
         self._head_pose.stop_monitoring()
 
-    def _update_canvas(self, yaw, pitch, roll, x, y, z):
+    def _update_canvas(self, parameters):
         transform = self._visual_node.base_transform()
-        transform.rotate(roll * self.roll_multiplier, (0, 0, 1))
+        postprocessed = {parameter: self.head_pose_postprocessors[parameter](value)
+                         for (parameter, value) in parameters.items()}
+        transform.rotate(postprocessed['roll'], (0, 0, 1))
         self._visual_node.transform = transform
         self.framerate_counter.tick()
