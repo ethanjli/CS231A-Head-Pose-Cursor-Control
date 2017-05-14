@@ -143,7 +143,10 @@ class ScreenStabilizer(HeadPoseAnimator):
         self.calibration = {parameter: value for (parameter, value) in postprocessed.items()}
         print('Postprocessed: {}'.format({parameter: round(value, 2)
                                           for (parameter, value) in postprocessed.items()}))
-        transform.translate((0, postprocessed['y'], 0))
+        transform.rotate(postprocessed['yaw'], (0, 1, 0))
+        transform.rotate(postprocessed['pitch'], (1, 0, 0))
+        transform.rotate(postprocessed['roll'], (0, 0, 1))
+        transform.translate((postprocessed['x'], postprocessed['y'], 0))
         self._head_visual_node.transform = transform
         self.framerate_counter.tick()
 
@@ -154,7 +157,11 @@ class ScreenStabilizer(HeadPoseAnimator):
         print('Postprocessed: {}'.format({parameter: round(value, 2)
                                           for (parameter, value) in postprocessed.items()}))
         transform = self._visual_node.base_transform()
-        transform.translate((0, postprocessed['y'] - self.calibration.y, 0))
+        transform.rotate(postprocessed['yaw'] - self.calibration.yaw, (0, 1, 0))
+        transform.rotate(postprocessed['pitch'] - self.calibration.pitch, (1, 0, 0))
+        transform.rotate(postprocessed['roll'] - self.calibration.roll, (0, 0, 1))
+        transform.translate((postprocessed['x'] - self.calibration.x,
+                             postprocessed['y'] - self.calibration.y, 0))
         self._visual_node.transform = transform
         #transformed_vertices = [self.calibration.transform(
         #                            base_vertex[0], base_vertex[1], **postprocessed)
