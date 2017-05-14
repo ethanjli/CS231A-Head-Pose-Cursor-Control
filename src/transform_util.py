@@ -8,8 +8,16 @@ class Calibration:
     self.x, self.y, self.z = x, y, z
 
   # Transform a point (pitch, yaw, roll in degrees)
-  # Point is a 2D point in screen coordinates (origin at camera)
   # Returns a tuple of new screen coordinates (x', y')
+  #
+  # x, y, and z are distances measured from the person's head to the camera
+  # x direction corresponds to moving rightwards on the screen
+  # y direction corresponds to moving up (in the natural sense of up)
+  # z direction corresponds to depth of camera
+  # screen_x and screen_y are measured relative to the position of the camera on the screen
+  #
+  # all numbers are in arbitrary units, but the units measuring screen_x, screen_y, x, y, z
+  # must be the same
   def transform(self, screen_x, screen_y, pitch, yaw, roll, x, y, z):
     dpitch = np.deg2rad(pitch - self.pitch)
     dyaw = np.deg2rad(yaw - self.yaw)
