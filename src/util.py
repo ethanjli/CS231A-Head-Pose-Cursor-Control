@@ -1,20 +1,22 @@
 #!/usr/bin/env python2
 """Functions and classes for loading of data from Oxford datasets."""
 from os import path
-import sys
 import time
 
 import numpy as np
 
-PACKAGE_PATH = path.dirname(sys.modules[__name__].__file__)
-ROOT_PATH = path.dirname(PACKAGE_PATH)
-MODEL_PATH = path.join(ROOT_PATH, 'ext', 'dlib', 'shape_predictor_68_face_landmarks.dat')
-
-class RingBuffer():
+class RingBuffer(object):
     """A 1-D ring buffer."""
     def __init__(self, length, dtype='f'):
+        if length == 0:
+            raise ValueError('RingBuffer length must be a positive number!')
         self.data = np.zeros(length, dtype=dtype)
-        self._index = 0
+        self._index = -1
+        self.length = 0
+
+    def reset(self):
+        self.data = np.zeros(self.data.shape[0], dtype=self.data.dtype)
+        self._index = -1
         self.length = 0
 
     def append(self, value):
@@ -35,6 +37,15 @@ class RingBuffer():
         else:
             return None
 
+    def get_continuous(self):
+        """Returns a copy of the buffer with elements in correct time order."""
+        if self.length < self.data.size:
+            return np.concatenate((self.data[:self._index + 1],
+                                   self.data[self._index + 1:]))[:self.length]
+        else:
+            return np.concatenate((self.data[self._index + 1:],
+                                   self.data[:self._index + 1]))
+
 class FramerateCounter():
     """A frame rate counter."""
     def __init__(self, smoothing_window_size=120):
@@ -51,4 +62,7 @@ class FramerateCounter():
         if frames <= 1:
             return None
         return frames / (current_time - earliest_time)
+
+    def reset(self):
+        self._buffer.reset()
 

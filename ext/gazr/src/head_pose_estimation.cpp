@@ -98,9 +98,9 @@ void HeadPoseEstimation::update(cv::InputArray _image)
             line(_debug, toCv(d.part(i)), toCv(d.part(i-1)), color, 2, CV_AA);
         line(_debug, toCv(d.part(60)), toCv(d.part(67)), color, 2, CV_AA);
 
-        for (auto i = 0; i < 68 ; i++) {
-            putText(_debug, to_string(i), toCv(d.part(i)), FONT_HERSHEY_DUPLEX, 0.6, Scalar(255,255,255));
-        }
+        // for (auto i = 0; i < 68 ; i++) {
+        //     putText(_debug, to_string(i), toCv(d.part(i)), FONT_HERSHEY_DUPLEX, 0.6, Scalar(255,255,255));
+        // }
     }
 #endif
 }
@@ -191,7 +191,7 @@ head_pose HeadPoseEstimation::pose(size_t face_idx) const
     line(_debug, projected_axes[0], projected_axes[2], Scalar(0,255,0),2,CV_AA);
     line(_debug, projected_axes[0], projected_axes[1], Scalar(0,0,255),2,CV_AA);
 
-    putText(_debug, "(" + to_string(int(pose(0,3) * 100)) + "cm, " + to_string(int(pose(1,3) * 100)) + "cm, " + to_string(int(pose(2,3) * 100)) + "cm)", coordsOf(face_idx, SELLION), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0,0,255),2);
+    // putText(_debug, "(" + to_string(int(pose(0,3) * 100)) + "cm, " + to_string(int(pose(1,3) * 100)) + "cm, " + to_string(int(pose(2,3) * 100)) + "cm)", coordsOf(face_idx, SELLION), FONT_HERSHEY_SIMPLEX, 0.5, Scalar(0,0,255),2);
 
 
 #endif

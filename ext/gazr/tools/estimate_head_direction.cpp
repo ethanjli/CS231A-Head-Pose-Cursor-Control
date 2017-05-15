@@ -21,9 +21,26 @@ inline double todeg(double rad) {
 }
 
 
+int countCameras()
+{
+    VideoCapture temp_camera;
+    int max_tested = 2;
+
+    for (int i = 0; i < max_tested; ++i) {
+        VideoCapture temp_camera(i);
+        bool res = (!temp_camera.isOpened());
+        temp_camera.release();
+        if (res) return i;
+    }
+
+    return max_tested;
+}
+
+
 int main(int argc, char **argv)
 {
     Mat frame;
+
     bool show_frame = false;
     bool use_camera = false;
 
@@ -78,11 +95,13 @@ int main(int argc, char **argv)
         video_in = VideoCapture(0);
 
         // adjust for your webcam!
-        video_in.set(CV_CAP_PROP_FRAME_WIDTH, 640);
-        video_in.set(CV_CAP_PROP_FRAME_HEIGHT, 480);
-        estimator.focalLength = 500;
-        estimator.opticalCenterX = 320;
-        estimator.opticalCenterY = 240;
+        video_in.set(CV_CAP_PROP_FRAME_WIDTH, 320);
+        video_in.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
+        //cout << video_in.get(CV_CAP_PROP_FRAME_WIDTH) << endl;
+        //cout << video_in.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
+        estimator.focalLength = 455;
+        estimator.opticalCenterX = 160;
+        estimator.opticalCenterY = 120;
 
         if(!video_in.isOpened()) {
             cerr << "Couldn't open camera" << endl;
@@ -150,7 +169,9 @@ int main(int argc, char **argv)
         cout << "}\n" << flush;
 
         if (show_frame) {
-            imshow("headpose", estimator._debug);
+            Mat flipped = estimator._debug.clone();
+            flip(estimator._debug, flipped, 1);
+            imshow("headpose", flipped);
             if(use_camera) {
                 waitKey(10);
             }

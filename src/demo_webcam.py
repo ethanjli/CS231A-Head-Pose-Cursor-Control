@@ -8,13 +8,14 @@ import skimage.transform
 import argparse
 
 import util
+import head_pose
 
 parser = argparse.ArgumentParser(description='Run image stabilization algorithm.')
 parser.add_argument('--use-file', type=str, default='',
                     help='a file to use instead of webcam input')
 args = parser.parse_args()
 
-predictor_path = util.MODEL_PATH
+predictor_path = head_pose._HEAD_POSE_MODEL_PATH
 
 window = dlib.image_window()
 detector = dlib.get_frontal_face_detector()
@@ -29,8 +30,8 @@ if args.use_file != '':
 else:
     vc = cv2.VideoCapture(0)
     use_bgr2rgb = True
-    fx = 0.25
-    fy = 0.25
+    fx = 0.5
+    fy = 0.5
 if vc.isOpened():
     rval, frame = vc.read()
 else:

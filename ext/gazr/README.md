@@ -33,39 +33,69 @@ support for other operating systems!
 
 ### Pre-requisites
 
-You need to [download](http://dlib.net/) and extract ``Dlib`` somewhere. This
-application requires ``dlib >= 18.18``. On Ubuntu 16.04 and above, `sudo
-apt-get install libdlib-dev`
-
-You also need OpenCV. On Ubuntu, `sudo apt-get install libopencv-dev`.
-
-### Installation
-
-The library uses a standard ``CMake`` workflow:
+First, navigate from the root of this repository to the `gazr` directory to make the `build` directory:
 
 ```
-$ mkdir build && cd build
-$ cmake ..
-$ make
+cd ext/gazr
+mkdir build
+cd build
 ```
 
-Run ``./gazr_show_head_pose ../share/shape_predictor_68_face_landmarks.dat`` to test
+Next, download and install dlib:
+
+```
+wget dlib.net/files/dlib-19.4.zip
+unzip dlib-19.4.zip
+rm dlib-19.4.zip
+cd dlib-19.4
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake --build . --config Release
+make
+sudo make install
+```
+
+Then go back to the build directory for Gazr:
+
+```
+cd ../..
+```
+
+Install boost-python: 
+```
+brew install boost --with-python
+brew install boost-python
+```
+We need to also copy some extra cmake files for dlib: 
+```
+sudo cp -r dlib-19.4/dlib/cmake_utils/test_for_cpp11/ /usr/local/include/dlib/cmake_utils/
+sudo cp -r dlib-19.4/dlib/cmake_utils/test_for_cpp11/CMakeLists.txt /usr/local/include/dlib/cmake_utils/test_for_cpp11
+sudo cp -r dlib-19.4/dlib/cmake_utils/test_for_cpp11/cpp11_test.cpp /usr/local/include/dlib/cmake_utils/test_for_cpp11
+```
+
+Finally, compile Gazr. *Note that we've updated the `cmake` command below to enable compiler optimizations*:
+
+```
+cmake -DCMAKE_BUILD_TYPE=Release ..
+make
+```
+Run ``./gazr_show_head_pose --model ../share/shape_predictor_68_face_landmarks.dat`` to test
 the library. You should get something very similar to the picture above.
 
-Finally, to install the library:
-
+Plotting the head pose
+----------------------
+From the build directory, run
 ```
-$ make install
+./gazr_estimate_head_direction --model ../share/shape_predictor_68_face_landmarks.dat --show | python ../tools/live_plot.py
 ```
 
-ROS support
------------
-
-The [ROS](http://www.ros.org/) wrapper provides a convenient node that exposes
-each detected face as a TF frame.
-
-Enable the compilation of the ROS wrapper with:
-
+Echoing the head pose
+----------------------
+From the build directory, run
 ```
-cmake -DWITH_ROS=ON
+./gazr_estimate_head_direction --model ../share/shape_predictor_68_face_landmarks.dat --show | python ../tools/echo.py
 ```
+
+You can also run ``./gazr_show_head_pose --model ../share/shape_predictor_68_face_landmarks.dat`` to test
+the library. You should get something similar to the picture above.
