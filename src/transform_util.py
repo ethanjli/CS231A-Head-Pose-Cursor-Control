@@ -67,7 +67,7 @@ class Calibration:
   # x direction corresponds to moving rightwards on the screen
   # y direction corresponds to moving up (in the natural sense of up)
   # z direction corresponds to depth of camera
-  # screen_x and screen_y are measured relative to the position of the camera on the screen
+  # screen_x and screen_y are measured relative to the position of the camera used for recording
   #
   # all numbers are in arbitrary units, but the units measuring screen_x, screen_y, x, y, z
   # must be the same
