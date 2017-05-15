@@ -163,16 +163,25 @@ class ScreenStabilizer(HeadPoseAnimator):
                         for (parameter, value) in parameters.items()}
         print('Postprocessed: {}'.format({parameter: round(value, 2)
                                           for (parameter, value) in postprocessed.items()}))
-        transform = self._visual_node.base_transform()
-        transform.rotate(postprocessed['yaw'] - self.calibration.yaw, (0, 1, 0))
-        transform.rotate(postprocessed['pitch'] - self.calibration.pitch, (1, 0, 0))
-        transform.rotate(postprocessed['roll'] - self.calibration.roll, (0, 0, 1))
-        transform.translate((postprocessed['x'] - self.calibration.x,
-                             postprocessed['y'] - self.calibration.y, 0))
-        self._visual_node.transform = transform
-        #transformed_vertices = [self.calibration.transform(
-        #                            base_vertex[0], base_vertex[1], **postprocessed)
-        #                        for base_vertex in base_vertices]
-        #self._visual_node.update_vertices(transformed_vertices)
+        #print 'x:', postprocessed['x']
+        #print 'y:', postprocessed['y']
+        #print 'z:', postprocessed['z']
+        #transform = self._visual_node.base_transform()
+        #transform.rotate(postprocessed['yaw'] - self.calibration.yaw, (0, 1, 0))
+        #transform.rotate(postprocessed['pitch'] - self.calibration.pitch, (1, 0, 0))
+        #transform.rotate(postprocessed['roll'] - self.calibration.roll, (0, 0, 1))
+        #transform.translate((postprocessed['x'] - self.calibration.x,
+        #                     postprocessed['y'] - self.calibration.y, 0))
+        #self._visual_node.transform = transform
+
+        screen_base_vertices = [transform_util.render_xy_to_screen_xy(*vertex)
+                                for vertex in base_vertices]
+        print screen_base_vertices
+        screen_transformed_vertices = [self.calibration.transform(
+                                           vertex[0], vertex[1], **postprocessed)
+                                       for vertex in screen_base_vertices]
+        render_transformed_vertices = [transform_util.screen_xy_to_render_xy(*vertex)
+                                       for vertex in screen_transformed_vertices]
+        self._visual_node.update_vertices(render_transformed_vertices)
         self.framerate_counter.tick()
         self._pipeline.update()
