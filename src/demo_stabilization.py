@@ -7,7 +7,7 @@ import visuals.canvas
 import animation
 
 pipeline = render.RenderingPipeline()
-canvas = pipeline.instantiate_visual(visuals.canvas.TextureVisual, 'wikipedia')
+canvas = pipeline.instantiate_visual(visuals.canvas.CheckerboardVisual, 'checkerboard')
 stabilizer = animation.ScreenStabilizer()
 stabilizer.register_visual_node(canvas)
 stabilizer.register_head_visual_node(pipeline.axes)

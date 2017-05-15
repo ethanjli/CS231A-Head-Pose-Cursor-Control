@@ -39,9 +39,8 @@ int countCameras()
 
 int main(int argc, char **argv)
 {
-
     Mat frame;
-    
+
     bool show_frame = false;
     bool use_camera = false;
 
@@ -93,14 +92,16 @@ int main(int argc, char **argv)
     VideoCapture video_in;
 
     if (use_camera) {
-        video_in = VideoCapture(countCameras() - 1); // Prefers USB webcam over laptop webcam
+        video_in = VideoCapture(0);
 
         // adjust for your webcam!
-        video_in.set(CV_CAP_PROP_FRAME_WIDTH, 170);
-        video_in.set(CV_CAP_PROP_FRAME_HEIGHT, 127.5);
-        estimator.focalLength = 500;
-        estimator.opticalCenterX = 85;
-        estimator.opticalCenterY = 63.75;
+        video_in.set(CV_CAP_PROP_FRAME_WIDTH, 320);
+        video_in.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
+        //cout << video_in.get(CV_CAP_PROP_FRAME_WIDTH) << endl;
+        //cout << video_in.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
+        estimator.focalLength = 455;
+        estimator.opticalCenterX = 160;
+        estimator.opticalCenterY = 120;
 
         if(!video_in.isOpened()) {
             cerr << "Couldn't open camera" << endl;

@@ -14,10 +14,7 @@ import visuals.axes
 _PACKAGE_PATH = os.path.dirname(sys.modules[__name__].__file__)
 
 _VIEW_PRESETS = {  # ((FOV, Elevation, Azimuth, Distance, Center), VisualNodeDisplayOverrides)
-    '1': ((30, 6, 90, 30, (0, 1.8, 2.3)),
-          {'car': True}),
-    '2': ((30, -10, 90, 1.5, (1, 1.2, -2.3)),
-          {'car': False})
+    '1': ((90, 6, 90, 1080, (0, 1.8, 2.3)), {}),
 }
 _PIXEL_KEYS = {}
 
@@ -26,12 +23,12 @@ class AdjustableCamera(vispy.scene.cameras.TurntableCamera):
     Mouse adjustments persist except when reset.
     """
     def __init__(self):
-        self.__fov = 30
+        self.__fov = 90
         self.elevation_offset = 0
         self.__elevation = self.elevation_offset
         self.azimuth_offset = 90
         self.__azimuth = self.azimuth_offset
-        self.distance_offset = 10
+        self.distance_offset = 540
         self.__distance = self.distance_offset
         self.center_offset = np.array([0, 0, 0])
         self.__center = self.center_offset
@@ -94,7 +91,7 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
     """Manages rendering of 3-D point cloud data."""
     def __init__(self):
         self.camera = AdjustableCamera()
-        super(RenderingPipeline, self).__init__(keys='interactive', size=(800, 600), bgcolor='white')
+        super(RenderingPipeline, self).__init__(keys='interactive', size=(1920, 1080), fullscreen=True, bgcolor='white')
 
         self.visual_nodes = {}
         self._timers = []
@@ -147,7 +144,7 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
 
     def get_scale(self):
         return (self._window_scale *
-                30.0 / self.camera.fov *
+                90.0 / self.camera.fov *
                 self.camera.distance_offset / self.camera.distance)
 
     def _update_scale(self):

@@ -1,5 +1,12 @@
 import numpy as np
 
+MONITOR_HEIGHT = 29.8  # cm
+MONITOR_WIDTH = 53.0  # cm
+CAMERA_X = MONITOR_WIDTH / 2.0  # cm from the left and right edges of the screen (camera is between the post-it note tabs)
+CAMERA_Y = 3.4  # cm above the top edge of the screen (the top row of pixels)
+SCREEN_HEIGHT = 1080  # px
+SCREEN_WIDTH = 1920  # px
+
 class Calibration:
   # Pitch, yaw, roll in degrees
   # (x, y, z) is calibrated initial position

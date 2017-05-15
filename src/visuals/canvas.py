@@ -13,10 +13,11 @@ def checkerboard(grid_num=8, grid_size=32):
     return 255 * Z.repeat(grid_size, axis=0).repeat(grid_size, axis=1)
 
 class CanvasVisual(visuals.CustomVisual):
-    def __init__(self):
+    def __init__(self, scale=400):
         super(CanvasVisual, self).__init__()
         self.program = visuals.load_shader_program(VERTEX_SHADER_FILENAME,
                                                    FRAGMENT_SHADER_FILENAME)
+        self.scale = scale
         self.program.vert['position'] = vispy.gloo.VertexBuffer([self.get_base_vertices()])
         self.program.vert['texcoord'] = vispy.gloo.VertexBuffer([(0, 0), (1, 0),
                                                                  (0, 1), (1, 1)])
@@ -40,7 +41,8 @@ class CanvasVisual(visuals.CustomVisual):
         self.program.frag[key] = value
 
     def get_base_vertices(self):
-        return [(-1, -1), (-1, +1), (+1, -1), (+1, +1)]
+        return [(-self.scale, -self.scale), (-self.scale, +self.scale),
+                (+self.scale, -self.scale), (+self.scale, +self.scale)]
 
     def update_vertices(self, vertices):
         self.program.vert['position'] = vispy.gloo.VertexBuffer(vertices)

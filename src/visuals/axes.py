@@ -10,5 +10,5 @@ class AxesVisual(visuals.CustomVisual, vispy.scene.visuals.XYZAxis):
     @staticmethod
     def base_transform():
         transform = vispy.visuals.transforms.AffineTransform()
-        transform.scale((2, 2, 2))
+        transform.scale((540, 540, 540))
         return transform

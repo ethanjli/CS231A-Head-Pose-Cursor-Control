@@ -11,9 +11,9 @@ _HEAD_POSE_POSTPROCESSORS = {
     'yaw': lambda value: -1 * value,
     'pitch': lambda value: -1 * value,
     'roll': lambda value: -1 * value,
-    'x': lambda value: value,
-    'y': lambda value: -1 * value,
-    'z': lambda value: value
+    'x': lambda value: 63.5 * value,  # cm that the camera is to the left of the center of the head
+    'y': lambda value: -93 * value,  # cm, just a scaling factor due to the calibration technique
+    'z': lambda value: 58.28 * value - 1.7  # cm between the camera and the head
 }
 
 _CALIBRATION_FILTERS = {parameter: signal_processing.SlidingWindowFilter(
@@ -143,12 +143,19 @@ class ScreenStabilizer(HeadPoseAnimator):
         self.calibration = {parameter: value for (parameter, value) in postprocessed.items()}
         print('Postprocessed: {}'.format({parameter: round(value, 2)
                                           for (parameter, value) in postprocessed.items()}))
+        #print 'x:', parameters['x']
+        #print 'y:', parameters['y']
+        #print 'z:', parameters['z']
+        #print 'x_post:', postprocessed['x']
+        #print 'y_post:', postprocessed['y']
+        #print 'z_post:', postprocessed['z']
         transform.rotate(postprocessed['yaw'], (0, 1, 0))
         transform.rotate(postprocessed['pitch'], (1, 0, 0))
         transform.rotate(postprocessed['roll'], (0, 0, 1))
-        transform.translate((postprocessed['x'], postprocessed['y'], 0))
+        transform.translate((postprocessed['x'], postprocessed['y'], 0.01))
         self._head_visual_node.transform = transform
         self.framerate_counter.tick()
+        self._pipeline.update()
 
     def _update_canvas(self, parameters):
         base_vertices = self._visual_node.get_base_vertices()
