@@ -67,6 +67,26 @@ def compute_3d_model(points, camera_matrices):
   points_3d = np.array(points_3d)
   return points_3d
 
+# Calculates rotation matrix to euler angles
+# The result is the same as MATLAB except the order
+# of the euler angles ( x and z are swapped ).
+# Output is in degrees.
+def rotationMatrixToEulerAngles(R):
+  sy = np.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
+   
+  singular = sy < 1e-6
+
+  if not singular :
+    x = np.arctan2(R[2,1] , R[2,2])
+    y = np.arctan2(-R[2,0], sy)
+    z = np.arctan2(R[1,0], R[0,0])
+  else :
+    x = np.arctan2(-R[1,2], R[1,1])
+    y = np.arctan2(-R[2,0], sy)
+    z = 0
+
+  return np.array([x, y, z]) * 180. / np.pi
+
 def map_3d_model(model_3d, camera_matrices):
   """
   Arguments:
@@ -119,7 +139,8 @@ class StereoModelCalibration:
         second to last index corresponds to camera number.
 
     Returns:
-      R: the rotation matrix (to be applied about the centroid of the object)
+      R: the rotation matrix (to be applied about the centroid of the object) that changes the 3d
+        model to the observed points
       T: the translation vector (displacement of centroid from calibrated position to final
         position)
     """
@@ -130,12 +151,13 @@ class StereoModelCalibration:
     U, s, V = np.linalg.svd(H)
     R = V.T.dot(U.T)
     T = centroid_ob - centroid_act
-    return R, T
+    return R.T, T
 
 def test_run():
   """
-  Method for testing class, run when program is __main__.
+  Method for testing functions in file, run when program is __main__.
   """
+  # Test map_3d_model and compute_3d_model
   K1 = K2 = np.diag([0.5, 0.4, 1])
   model_3d = np.array([[1,1,1],
     [0,0,2],
@@ -163,11 +185,14 @@ def test_run():
   shifted_model += model_centroid
   shifted_model += T
   points = map_3d_model(shifted_model, smc._camera_matrices)
+  points += np.random.randn(*points.shape) * 0.002
   R_com, T_com = smc.compute_RT(points)
   print 'R_act', R
   print 'T_act', T
   print 'R_com', R_com
   print 'T_com', T_com
+  print 'act euler angles:', rotationMatrixToEulerAngles(R)
+  print 'com euler angles:', rotationMatrixToEulerAngles(R_com)
   return smc
 
 if __name__=='__main__':
