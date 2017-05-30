@@ -103,7 +103,6 @@ class StereoModelCalibration:
       model_3d: an N x 3 set of points corresponding to the positions of all keypoints in the
         reference position
     """
-    self._camera_distance = camera_distance
     self._camera_matrices = np.zeros((2,3,4))
     self._camera_matrices[0] = np.concatenate([K1, np.zeros((3,1))], axis=1)
     M2 = K1.dot(np.concatenate([np.eye(3), np.array([[-camera_distance,0,0]]).T], axis=1))
@@ -124,7 +123,14 @@ class StereoModelCalibration:
       T: the translation vector (displacement of centroid from calibrated position to final
         position)
     """
-      pass
+    points_3d = compute_3d_model(points, self._camera_matrices)
+    centroid_ob = np.mean(points_3d, axis=0)
+    centroid_act = np.mean(self._model_3d, axis=0)
+    H = (points_3d - centroid_ob).T.dot(self._model_3d - centroid_act)
+    U, s, V = np.linalg.svd(H)
+    R = V.T.dot(U.T)
+    T = centroid_ob - centroid_act
+    return R, T
 
 def test_run():
   """
@@ -143,6 +149,25 @@ def test_run():
   rec_3d = compute_3d_model(points, smc._camera_matrices)
   print 'Rec_3d:', rec_3d
   print 'Diff:', model_3d - rec_3d
+
+  # Test compute_RT
+  model_centroid = np.mean(model_3d, axis=0)
+  shifted_model = model_3d - model_centroid
+  angle = 0.4
+  R = np.array([[np.cos(angle), np.sin(angle), 0],
+    [-np.sin(angle), np.cos(angle), 0],
+    [0, 0, 1]
+    ])
+  T = np.array([1, 2, 3])
+  shifted_model = shifted_model.dot(R.T)
+  shifted_model += model_centroid
+  shifted_model += T
+  points = map_3d_model(shifted_model, smc._camera_matrices)
+  R_com, T_com = smc.compute_RT(points)
+  print 'R_act', R
+  print 'T_act', T
+  print 'R_com', R_com
+  print 'T_com', T_com
   return smc
 
 if __name__=='__main__':
