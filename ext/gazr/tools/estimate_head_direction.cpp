@@ -54,6 +54,7 @@ int main(int argc, char **argv)
             ("show,s", "display the image with gaze estimation")
             ("model", po::value<string>(), "dlib's trained face model")
             ("image", po::value<string>(), "image to process (png, jpg)")
+            ("camera", po::value<int>()->default_value(0), "index of the webcam to use")
             ;
 
     po::variables_map vm;
@@ -92,7 +93,7 @@ int main(int argc, char **argv)
     VideoCapture video_in;
 
     if (use_camera) {
-        video_in = VideoCapture(0);
+        video_in = VideoCapture(vm["camera"].as<int>());
 
         // adjust for your webcam!
         video_in.set(CV_CAP_PROP_FRAME_WIDTH, 320);
