@@ -18,6 +18,10 @@ _FACIAL_LANDMARK_MODEL_PATH = path.join(_ROOT_PATH, 'ext', 'dlib', 'shape_predic
 _FACIAL_LANDMARK_TRACKER_ARGS = [_FACIAL_LANDMARK_TRACKER_PATH, '--show',
                                  '--model', _FACIAL_LANDMARK_MODEL_PATH]
 
+# Anthropometric for male adult
+# Relative position of various facial feature relative to sellion
+# Values taken from https://en.wikipedia.org/wiki/Human_head
+# X points forward
 MODEL = {
     'sellion': np.array([0.0, 0.0, 0.0]),
     'right_eye': np.array([-20.0, -65.5, -5.0]),
