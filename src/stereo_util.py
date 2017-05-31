@@ -109,8 +109,11 @@ def map_3d_model(model_3d, camera_matrices):
   points = np.array(points)
   return points
 
+class NoIntersectionException(Exception):
+  pass
+
 class StereoModelCalibration:
-  def __init__(self, camera_distance, K1, K2, model_3d):
+  def __init__(self, camera_distance, K1, K2, model_3d, initial_pos):
     """
     Initialize the stereo model calibration. Requires two cameras with known camera matrices
     at the same height and parallel to one another.
@@ -122,12 +125,20 @@ class StereoModelCalibration:
       camera_matrices: a 2 x 3 x 3 matrix containing the camera matrices (K) of the two cameras
       model_3d: an N x 3 set of points corresponding to the positions of all keypoints in the
         reference position
+      initial_pos: position on the screen (in same units as camera matrices) that the user is
+        initially looking at. measured relative to the camera position.
+
+    We assume that moving rightward from the camera's point of view is +x, moving downward is +y,
+    and moving away form the camera is +z.
     """
     self._camera_matrices = np.zeros((2,3,4))
     self._camera_matrices[0] = np.concatenate([K1, np.zeros((3,1))], axis=1)
     M2 = K1.dot(np.concatenate([np.eye(3), np.array([[-camera_distance,0,0]]).T], axis=1))
     self._camera_matrices[1] = M2
     self._model_3d = model_3d
+    self._centroid = np.mean(self._model_3d, axis=0)
+    self._initial_pos = initial_pos
+    self._base_gaze_dir = np.append(initial_pos, 0) - self._centroid # Unnormalized
 
   def compute_RT(self, points):
     """
@@ -146,12 +157,34 @@ class StereoModelCalibration:
     """
     points_3d = compute_3d_model(points, self._camera_matrices)
     centroid_ob = np.mean(points_3d, axis=0)
-    centroid_act = np.mean(self._model_3d, axis=0)
-    H = (points_3d - centroid_ob).T.dot(self._model_3d - centroid_act)
+    H = (points_3d - centroid_ob).T.dot(self._model_3d - self._centroid)
     U, s, V = np.linalg.svd(H)
     R = V.T.dot(U.T)
-    T = centroid_ob - centroid_act
+    T = centroid_ob - self._centroid
     return R.T, T
+
+  def compute_gaze_location(self, points):
+    """
+    Compute the location that a user is looking at given a set of keypoints.
+
+    Arguments:
+      points: a N x 2 x 2 set of points corresponding to positions on images taken by the two cameras.
+        second to last index corresponds to camera number.
+
+    Returns:
+      gaze_point: a 2 long vector containing the location on the screen the user is looking at,
+        in the same units as camera matricess and measured relative to position of camera. uses same
+        +x and +y axis as described in __init__.
+    """
+    R, T = self.compute_RT(points)
+    gaze_dir = R.dot(self._base_gaze_dir)
+    new_centroid = self._centroid + T
+    theta = -new_centroid[2] / gaze_dir[2]
+    if theta < 0:
+      raise NoIntersectionException("Gaze direction does not intersect with screen plane.")
+    intersection = new_centroid + gaze_dir * theta
+    gaze_point = intersection[0:2]
+    return gaze_point
 
 def test_run():
   """
@@ -163,8 +196,14 @@ def test_run():
     [0,0,2],
     [0.4, 0.6, 0.2],
     [-0.2, 0.5, 0.5]])
+  model_3d = np.array([[1,1,2],
+    [-1,-1,2],
+    [0.4, 0.6, 1.5],
+    [-0.4, -0.6, 1.5],
+    [0.8, -0.3, 1],
+    [-0.8, 0.3, 1]])
   print 'Model:', model_3d
-  smc = StereoModelCalibration(1, K1, K2, model_3d)
+  smc = StereoModelCalibration(1, K1, K2, model_3d, np.array([0, 0]))
   points = map_3d_model(model_3d, smc._camera_matrices)
   print 'Mapped points:', points
   points += np.random.randn(*points.shape) * 0.05
@@ -185,7 +224,7 @@ def test_run():
   shifted_model += model_centroid
   shifted_model += T
   points = map_3d_model(shifted_model, smc._camera_matrices)
-  points += np.random.randn(*points.shape) * 0.002
+  points += np.random.randn(*points.shape) * 0.00 # Add noise if desired
   R_com, T_com = smc.compute_RT(points)
   print 'R_act', R
   print 'T_act', T
@@ -193,6 +232,10 @@ def test_run():
   print 'T_com', T_com
   print 'act euler angles:', rotationMatrixToEulerAngles(R)
   print 'com euler angles:', rotationMatrixToEulerAngles(R_com)
+
+  # Test compute_gaze_location
+  point = smc.compute_gaze_location(points)
+  print 'gaze point:', point
   return smc
 
 if __name__=='__main__':
