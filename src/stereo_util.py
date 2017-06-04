@@ -109,6 +109,13 @@ def map_3d_model(model_3d, camera_matrices):
   points = np.array(points)
   return points
 
+def make_parallel_camera_matrices(K1, K2, camera_distance):
+  camera_matrices = np.zeros((2,3,4))
+  camera_matrices[0] = np.concatenate([K1, np.zeros((3,1))], axis=1)
+  M2 = K1.dot(np.concatenate([np.eye(3), np.array([[-camera_distance,0,0]]).T], axis=1))
+  camera_matrices[1] = M2  
+  return camera_matrices
+
 class NoIntersectionException(Exception):
   pass
 
@@ -131,10 +138,7 @@ class StereoModelCalibration:
     We assume that moving rightward from the camera's point of view is +x, moving downward is +y,
     and moving away form the camera is +z.
     """
-    self._camera_matrices = np.zeros((2,3,4))
-    self._camera_matrices[0] = np.concatenate([K1, np.zeros((3,1))], axis=1)
-    M2 = K1.dot(np.concatenate([np.eye(3), np.array([[-camera_distance,0,0]]).T], axis=1))
-    self._camera_matrices[1] = M2
+    self._camera_matrices = make_parallel_camera_matrices(K1, K2, camera_distance)
     self._model_3d = model_3d
     self._initial_pos = initial_pos
 
