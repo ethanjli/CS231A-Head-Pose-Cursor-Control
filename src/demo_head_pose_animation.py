@@ -14,7 +14,7 @@ scene_manager = scene_manager.SceneManager(VIEW_PRESETS)
 scene_manager.register_rendering_pipeline(pipeline)
 scene_manager.add_checkerboard()
 
-head_pose_animator = animation.HeadPoseAnimator()
+head_pose_animator = animation.HeadRollAnimator()
 head_pose_animator.register_visual_node(scene_manager.checkerboard)
 head_pose_animator.register_rendering_pipeline(pipeline)
 head_pose_animator.animate_async()
