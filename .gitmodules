@@ -1,0 +1,3 @@
+[submodule "ext/StereoVision"]
+	path = ext/StereoVision
+	url = https://github.com/ethanjli/StereoVision.git
