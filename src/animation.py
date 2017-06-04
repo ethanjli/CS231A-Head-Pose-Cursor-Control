@@ -75,7 +75,7 @@ class HeadPoseAnimator(object):
     def animate_async(self):
         self._head_pose.monitor_async(self._update_canvas)
 
-    def clean_up(self):
+    def stop_animating(self):
         """Stops updating a RenderingPipeline.
 
         Threading:
@@ -183,8 +183,8 @@ class ScreenStabilizer(HeadPoseAnimator):
     def register_head_visual_node(self, visual_node):
         self._head_visual_node = visual_node
 
-    def clean_up(self):
-        super(ScreenStabilizer, self).clean_up()
+    def stop_animating(self):
+        super(ScreenStabilizer, self).stop_animating()
 
     def on_key_press(self, event):
         if self.state == 'ready':

@@ -21,4 +21,4 @@ head_pose_animator.animate_async()
 
 pipeline.start_rendering()
 
-head_pose_animator.clean_up()
+head_pose_animator.stop_animating()

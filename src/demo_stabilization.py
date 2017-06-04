@@ -20,4 +20,4 @@ stabilizer.register_rendering_pipeline(pipeline)
 
 pipeline.start_rendering()
 
-stabilizer.clean_up()
+stabilizer.stop_animating()
