@@ -312,3 +312,16 @@ class FaceAxesAnimator(FacialLandmarkAnimator):
         self._visual_node.transform = transform
         self.framerate_counter.tick()
         self._pipeline.update()
+
+class FacePointsAnimator(FacialLandmarkAnimator):
+    def __init__(self):
+        super(FacePointsAnimator, self).__init__()
+
+    def register_rendering_pipeline(self, pipeline):
+        super(FacePointsAnimator, self).register_rendering_pipeline(pipeline)
+
+    def on_update(self, keypoints):
+        face = stereo_util.compute_3d_model(keypoints, STEREO_CALIBRATION._camera_matrices)
+        self._visual_node.update_list_data(face)
+        self.framerate_counter.tick()
+        self._pipeline.update()

@@ -8,7 +8,7 @@ from utilities import util
 from utilities import profiling
 import render
 
-VISUAL_NAMES = ['axes', 'checkerboard', 'texture', 'lidar']
+VISUAL_NAMES = ['axes', 'checkerboard', 'texture', 'face']
 
 VIEW_PRESETS = {
     '1': {
@@ -33,7 +33,7 @@ class SceneManager():
         self.axes = None
         self.checkerboard = None
         self.texture = None
-        self.lidar_point_cloud = None
+        self.face_point_cloud = None
 
         self._visibilities = {visual_name: False
                               for visual_name in VISUAL_NAMES}
@@ -66,20 +66,20 @@ class SceneManager():
             canvas.TextureVisual, 'texture')
         self._visibilities['texture'] = True
 
-    def add_lidar(self):
-        self.lidar_point_cloud = self._pipeline.instantiate_visual(
-            point_cloud.LIDARPointCloudVisual, 'lidar')
+    def add_face(self):
+        self.face_point_cloud = self._pipeline.instantiate_visual(
+            point_cloud.FaceVisual, 'face')
         framerate_counter = text.FramerateCounter(
-            self._pipeline, self.lidar_point_cloud.framerate_counter,
-            'data', 'lidar reconstructions/sec')
+            self._pipeline, self.face_point_cloud.framerate_counter,
+            'data', 'face updates/sec')
         self._pipeline.add_text(framerate_counter)
-        self._visibilities['lidar'] = True
+        self._visibilities['face'] = True
 
     # Visual Initialization
 
-    def init_lidar(self, lidar):
-        self.lidar_point_cloud.initialize_data(
-            lidar.get_array_shape()[0])
+    def init_face(self, face):
+        self.face_point_cloud.initialize_data(
+            face.get_array_shape()[0])
 
     # Event Handlers
 
@@ -88,8 +88,8 @@ class SceneManager():
             self.toggle_visibility('checkerboard')
         if event.text == 't':
             self.toggle_visibility('texture')
-        elif event.text == 'l':
-            self.toggle_visibility('lidar')
+        elif event.text == 'f':
+            self.toggle_visibility('face')
         elif event.text == 'a':
             self.toggle_visibility('axes')
         elif event.text in self._presets:
@@ -123,9 +123,9 @@ class SceneManager():
         if self.texture is not None and self.texture.updated_state:
             self.texture.redraw()
             updated = True
-        if (self.lidar_point_cloud is not None and
-                self.lidar_point_cloud.updated_state):
-            self.lidar_point_cloud.redraw()
+        if (self.face_point_cloud is not None and
+                self.face_point_cloud.updated_state):
+            self.face_point_cloud.redraw()
             updated = True
 
         # Update camera

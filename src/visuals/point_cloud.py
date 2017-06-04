@@ -34,7 +34,7 @@ class PointCloudVisual(visuals.CustomVisual):
         self.update_list_data(util.grid_data_to_list_data(points),
                               util.grid_data_to_list_data(rgb))
 
-    def update_list_data(self, points, rgb):
+    def update_list_data(self, points, rgb=0):
         """Updates the point cloud data, given by one point per row, and re-renders it.
         Data are all assumed to be of the same number of points.
         """
@@ -87,27 +87,14 @@ class PointCloudVisual(visuals.CustomVisual):
     def update_scale(self, pixel_scale):
         self.set_param('u_size', 2 * pixel_scale)
 
-class StereoReconstructionVisual(PointCloudVisual):
+class FaceVisual(PointCloudVisual):
     def __init__(self):
-        super(StereoReconstructionVisual, self).__init__()
+        super(FaceVisual, self).__init__()
 
     @staticmethod
     def base_transform():
         transform = vispy.visuals.transforms.AffineTransform()
-        transform.scale((-1, 1, 1))
-        transform.translate((0, 0.9, 0))
-        transform.rotate(1.2, (1, 0, 0))
-        return transform
-
-class LIDARPointCloudVisual(PointCloudVisual):
-    def __init__(self):
-        super(LIDARPointCloudVisual, self).__init__()
-
-    @staticmethod
-    def base_transform():
-        transform = vispy.visuals.transforms.AffineTransform()
-        transform.rotate(90, [1,0,0])
-        transform.rotate(90, [0,1,0])
-        transform.translate((0, 1.0, -2.5))
-        transform.rotate(-3, [1,0,0])
+        #transform.rotate(180, (0, 1, 0))
+        #transform.rotate(180, (0, 0, 1))
+        #transform.scale((-1, -1, -1))
         return transform
