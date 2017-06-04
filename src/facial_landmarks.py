@@ -10,6 +10,7 @@ except ImportError:
 import numpy as np
 
 from utilities import signal_processing
+import monitoring
 
 _PACKAGE_PATH = path.dirname(sys.modules[__name__].__file__)
 _ROOT_PATH = path.dirname(_PACKAGE_PATH)
@@ -35,79 +36,20 @@ MODEL = {
 }
 PARAMETERS = ['sellion', 'right_eye', 'left_eye', 'right_ear', 'left_ear', 'nose', 'stommion', 'menton']
 
-class FacialLandmarks():
+class FacialLandmarks(monitoring.Monitor):
     """Consumes facial landmark tracking stream from stdin and updates."""
     def __init__(self, camera_index=0):
+        super(FacialLandmarks, self).__init__()
         self.parameters = {parameter: None for parameter in MODEL.keys()}
-        self.updated = False
         self.camera_index = camera_index
 
-        self._tracker_process = None
-        self._monitor_thread = None
-
-    def update(self, line=None):
-        """Synchronously updates parameters once from the stdin buffer.
-
-        Arguments:
-            line: the head pose tracking stdout line. If None, will read from stdin.
-        """
-        if line is None:
-            line = sys.stdin.readline()
-        data = eval(line)
+    def on_update(self, data):
         if "face_0" in data:
             self.parameters = {parameter: data['face_0'][parameter] for parameter in PARAMETERS}
             self.updated = True
 
-    def _start_tracker(self):
-        """Starts the external head pose tracking program.
-        The program's stdout is piped to the current stdin.
-        """
-        on_posix = 'posix' in sys.builtin_module_names
-
+    def get_tracker_args(self):
         args = list(_FACIAL_LANDMARK_TRACKER_ARGS)
         args.append('--camera')
         args.append(str(self.camera_index))
-
-        self._tracker_process = subprocess.Popen(args,
-                                                 stdout=subprocess.PIPE,
-                                                 bufsize=1, close_fds=on_posix)
-
-    def monitor_sync(self, callback=None):
-        """Synchronously updates parameters continuously from stdin.
-
-        Arguments:
-            callback: If provided, calls callback after each update with the parameters.
-        """
-        self._start_tracker()
-        for line in iter(self._tracker_process.stdout.readline, b''):
-            self.update(line)
-            if self.updated:
-                callback(self.parameters)
-
-    def monitor_async(self, callback=None):
-        """Asynchronously updates parameters continuously from stdin.
-
-        Arguments:
-            callback: If provided, calls callback after each update with the parameters.
-        Threading:
-            Instantiates a singleton thread named HeadPose.
-        """
-        if self._monitor_thread is not None:
-            return
-        self._monitor_thread = threading.Thread(target=self.monitor_sync, name='FacialLandmarks',
-                                                kwargs={'callback': callback})
-        self._monitor_thread.start()
-
-    def stop_monitoring(self):
-        """Stops head pose tracking.
-        Stops the tracker process, if it exists.
-        Stops the asynchronous monitor, if it was started.
-        """
-        if self._tracker_process is not None:
-            self._tracker_process.terminate()
-            self._tracker_process.wait()
-            self._tracker_process = None
-        if self._monitor_thread is not None:
-            self._monitor_thread.join()
-            self._monitor_thread = None
-
+        return args
