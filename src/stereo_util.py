@@ -89,6 +89,8 @@ def rotationMatrixToEulerAngles(R):
 
 def map_3d_model(model_3d, camera_matrices):
   """
+  Map the 3d points from model_3d into 2 images using the provided camera_matrices.
+
   Arguments:
     model_3d: a N x 3 set of points in the 3d model
     camera_matrices: a 2 x 3 x 4 matrix containing the camera matrices M1 and M2
@@ -110,6 +112,24 @@ def map_3d_model(model_3d, camera_matrices):
   return points
 
 def make_parallel_camera_matrices(K1, K2, camera_distance):
+  """
+  Make the full camera matrices (with extrinsic parameters) for the parallel cameras with intrinsic
+  parameters given by K1 and K2. Origin is set to be at the location of the first camera.
+
+  Arguments:
+    K1: intrinsic camera matrix of first camera
+    K2: intrinsic camera matrix of second camera
+    camera_distance: the lateral distance between the two cameras, assumed to be parallel
+      and at the same height. positive camera distance means that from camera1's perspective,
+      camera2 is on its right. the x axis is assumed to correspond to this rightward direction.
+
+  Returns:
+    camera_matrices: a 2 x 3 x 4 matrix containing the "M" camera matrices of the two cameras,
+      with the first index corresponding to camera number
+
+  We assume that moving rightward from the camera's point of view is +x, moving downward is +y,
+  and moving away form the camera is +z.
+  """
   camera_matrices = np.zeros((2,3,4))
   camera_matrices[0] = np.concatenate([K1, np.zeros((3,1))], axis=1)
   M2 = K1.dot(np.concatenate([np.eye(3), np.array([[-camera_distance,0,0]]).T], axis=1))
