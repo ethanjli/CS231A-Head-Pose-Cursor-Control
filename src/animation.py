@@ -283,13 +283,24 @@ class FacialLandmarkAnimator(AsynchronousAnimator):
 
     def execute(self):
         if self._left_landmarks_updated and self._right_landmarks_updated:
-            self._update_visual_node()
+            keypoints = np.array([[self._left_landmarks[parameter], self._right_landmarks[parameter]]
+                                for parameter in facial_landmarks.PARAMETERS])
+            self.on_update(keypoints)
             self._left_landmarks_updated = False
             self._right_landmarks_updated = False
 
-    def _update_visual_node(self):
-        keypoints = np.array([[self._left_landmarks[parameter], self._right_landmarks[parameter]]
-                              for parameter in facial_landmarks.PARAMETERS])
+    def on_update(self, keypoints):
+        pass
+
+class FaceAxesAnimator(FacialLandmarkAnimator):
+    def __init__(self):
+        super(FaceAxesAnimator, self).__init__()
+
+    def register_rendering_pipeline(self, pipeline):
+        super(FaceAxesAnimator, self).register_rendering_pipeline(pipeline)
+        self.register_visual_node(pipeline.axes)
+
+    def on_update(self, keypoints):
         (rotation, translation) = STEREO_CALIBRATION.compute_RT(keypoints)
         transform = self._visual_node.base_transform()
         transform.translate(-translation)
