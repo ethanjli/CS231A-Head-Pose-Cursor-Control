@@ -113,7 +113,7 @@ class NoIntersectionException(Exception):
   pass
 
 class StereoModelCalibration:
-  def __init__(self, camera_distance, K1, K2, model_3d, initial_pos):
+  def __init__(self, camera_distance, K1, K2, model_3d=None, initial_pos=None):
     """
     Initialize the stereo model calibration. Requires two cameras with known camera matrices
     at the same height and parallel to one another.
@@ -136,9 +136,13 @@ class StereoModelCalibration:
     M2 = K1.dot(np.concatenate([np.eye(3), np.array([[-camera_distance,0,0]]).T], axis=1))
     self._camera_matrices[1] = M2
     self._model_3d = model_3d
-    self._centroid = np.mean(self._model_3d, axis=0)
     self._initial_pos = initial_pos
-    self._base_gaze_dir = np.append(initial_pos, 0) - self._centroid # Unnormalized
+    if model_3d == None:
+      self._centroid = None
+      self._base_gaze_dir = None
+    else:
+      self._centroid = np.mean(self._model_3d, axis=0)
+      self._base_gaze_dir = np.append(initial_pos, 0) - self._centroid # Unnormalized
 
   def compute_RT(self, points):
     """
