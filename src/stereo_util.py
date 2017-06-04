@@ -137,12 +137,6 @@ class StereoModelCalibration:
     self._camera_matrices[1] = M2
     self._model_3d = model_3d
     self._initial_pos = initial_pos
-    if model_3d == None:
-      self._centroid = None
-      self._base_gaze_dir = None
-    else:
-      self._centroid = np.mean(self._model_3d, axis=0)
-      self._base_gaze_dir = np.append(initial_pos, 0) - self._centroid # Unnormalized
 
   def compute_RT(self, points):
     """
@@ -161,10 +155,11 @@ class StereoModelCalibration:
     """
     points_3d = compute_3d_model(points, self._camera_matrices)
     centroid_ob = np.mean(points_3d, axis=0)
-    H = (points_3d - centroid_ob).T.dot(self._model_3d - self._centroid)
+    centroid = np.mean(self._model_3d, axis=0)
+    H = (points_3d - centroid_ob).T.dot(self._model_3d - centroid)
     U, s, V = np.linalg.svd(H)
     R = V.T.dot(U.T)
-    T = centroid_ob - self._centroid
+    T = centroid_ob - centroid
     return R.T, T
 
   def compute_gaze_location(self, points):
@@ -181,8 +176,10 @@ class StereoModelCalibration:
         +x and +y axis as described in __init__.
     """
     R, T = self.compute_RT(points)
-    gaze_dir = R.dot(self._base_gaze_dir)
-    new_centroid = self._centroid + T
+    centroid = np.mean(self._model_3d, axis=0)
+    base_gaze_dir = np.append(self._initial_pos, 0) - centroid
+    gaze_dir = R.dot(base_gaze_dir)
+    new_centroid = centroid + T
     theta = -new_centroid[2] / gaze_dir[2]
     if theta < 0:
       raise NoIntersectionException("Gaze direction does not intersect with screen plane.")
