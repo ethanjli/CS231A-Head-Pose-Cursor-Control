@@ -32,12 +32,14 @@ MODEL = {
     'stommion': np.array([10.0, 0.0, -75.0]),
     'menton': np.array([0.0, 0.0, -133.0])
 }
+PARAMETERS = ['sellion', 'right_eye', 'left_eye', 'right_ear', 'left_ear', 'nose', 'stommion', 'menton']
 
 class FacialLandmarks():
     """Consumes facial landmark tracking stream from stdin and updates."""
-    def __init__(self):
-        self.parameters = {parameter: None for parameter in PARAMETERS}
+    def __init__(self, camera_index=0):
+        self.parameters = {parameter: None for parameter in MODEL.keys()}
         self.updated = False
+        self.camera_index = camera_index
 
         self._tracker_process = None
         self._monitor_thread = None
@@ -52,7 +54,7 @@ class FacialLandmarks():
             line = sys.stdin.readline()
         data = eval(line)
         if "face_0" in data:
-            raw_data = {data['face_0'][parameter] for parameter in MODEL.keys()}
+            self.parameters = {parameter: data['face_0'][parameter] for parameter in PARAMETERS}
             self.updated = True
 
     def _start_tracker(self):
@@ -61,7 +63,11 @@ class FacialLandmarks():
         """
         on_posix = 'posix' in sys.builtin_module_names
 
-        self._tracker_process = subprocess.Popen(_FACIAL_LANDMARK_TRACKER_ARGS,
+        args = list(_FACIAL_LANDMARK_TRACKER_ARGS)
+        args.append('--camera')
+        args.append(str(self.camera_index))
+
+        self._tracker_process = subprocess.Popen(args,
                                                  stdout=subprocess.PIPE,
                                                  bufsize=1, close_fds=on_posix)
 

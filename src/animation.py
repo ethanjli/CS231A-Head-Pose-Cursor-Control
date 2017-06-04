@@ -1,8 +1,12 @@
 import threading
 
+import numpy as np
+
+import facial_landmarks
 import head_pose
 import util
 import transform_util
+import stereo_util
 import signal_processing
 import vispy.visuals
 import visuals.text
@@ -19,6 +23,13 @@ _HEAD_POSE_POSTPROCESSORS = {
 _CALIBRATION_FILTERS = {parameter: signal_processing.SlidingWindowFilter(
                             40, estimation_mode=('kernel', signal_processing.half_gaussian_window(40, 20.0)))
                         for parameter in head_pose.PARAMETERS}
+
+INTRINSICS = np.array([[454.64682856, 0.00000, 160.0],
+                       [0.00000, 454.64682856, 120.0],
+                       [0.00000, 0.00000, 1.00]])
+STEREO_CALIBRATION = stereo_util.StereoModelCalibration(
+    23.0, INTRINSICS, INTRINSICS, np.vstack([facial_landmarks.MODEL[parameter]
+                                             for parameter in facial_landmarks.PARAMETERS]))
 
 class AsynchronousAnimator(object):
     """Abstract class for animators which run asynchronously in a thread."""
@@ -80,6 +91,63 @@ class HeadPoseAnimator(object):
         transform.rotate(postprocessed['roll'], (0, 0, 1))
         self._visual_node.transform = transform
         self.framerate_counter.tick()
+
+class FacialLandmarkAnimator(AsynchronousAnimator):
+    """Asynchronously updates a rendering pipeline with facial landmarks."""
+    def __init__(self):
+        super(FacialLandmarkAnimator, self).__init__('FacialLandmarkAnimator')
+        self._pipeline = None
+        self._visual_node = None
+        self._facial_landmarks_left = facial_landmarks.FacialLandmarks(camera_index=0)
+        self._facial_landmarks_right = facial_landmarks.FacialLandmarks(camera_index=1)
+        self._left_landmarks = None
+        self._left_landmarks_updated = False
+        self._right_landmarks = None
+        self._right_landmarks_updated = False
+        self.framerate_counter = util.FramerateCounter()
+
+    def register_rendering_pipeline(self, pipeline):
+        pass
+
+    def register_visual_node(self, visual_node):
+         pass
+
+    def animate_sync(self):
+        self._facial_landmarks_left.monitor_async(self._update_left_landmarks)
+        self._facial_landmarks_right.monitor_async(self._update_right_landmarks)
+        super(FacialLandmarkAnimator, self).animate_sync()
+
+    def _update_left_landmarks(self, parameters):
+        self._left_landmarks = parameters
+        self._left_landmarks_updated = True
+
+    def _update_right_landmarks(self, parameters):
+        self._right_landmarks = parameters
+        self._right_landmarks_updated = True
+
+    def stop_animating(self):
+        """Stops updating a RenderingPipeline.
+
+        Threading:
+            Joins a head pose tracking thread.
+        """
+        self._facial_landmarks_left.stop_monitoring()
+        self._facial_landmarks_right.stop_monitoring()
+        super(FacialLandmarkAnimator, self).stop_animating()
+
+    def execute(self):
+        if self._left_landmarks_updated and self._right_landmarks_updated:
+            self.framerate_counter.tick()
+            self._triangulate()
+            self._left_landmarks_updated = False
+            self._right_landmarks_updated = False
+
+    def _triangulate(self):
+        keypoints = np.array([[self._left_landmarks[parameter], self._right_landmarks[parameter]]
+                              for parameter in facial_landmarks.PARAMETERS])
+        camera_matrices = STEREO_CALIBRATION._camera_matrices
+        model = stereo_util.compute_3d_model(keypoints, camera_matrices)
+        print(model[0])
 
 class ScreenStabilizer(HeadPoseAnimator):
     """Asynchronously guides the user through screen stabilization calibration."""
