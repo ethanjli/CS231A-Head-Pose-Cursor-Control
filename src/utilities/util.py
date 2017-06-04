@@ -1,8 +1,5 @@
 #!/usr/bin/env python2
-"""Functions and classes for loading of data from Oxford datasets."""
-from os import path
-import time
-
+"""Generic utility functions."""
 import numpy as np
 
 class RingBuffer(object):
@@ -45,24 +42,3 @@ class RingBuffer(object):
         else:
             return np.concatenate((self.data[self._index + 1:],
                                    self.data[:self._index + 1]))
-
-class FramerateCounter():
-    """A frame rate counter."""
-    def __init__(self, smoothing_window_size=120):
-        self._buffer = RingBuffer(smoothing_window_size, dtype='d')
-
-    def tick(self):
-        current_time = time.time()
-        self._buffer.append(current_time)
-
-    def query(self):
-        earliest_time = self._buffer.get_tail()
-        current_time = self._buffer.get_head()
-        frames = self._buffer.length
-        if frames <= 1:
-            return None
-        return frames / (current_time - earliest_time)
-
-    def reset(self):
-        self._buffer.reset()
-

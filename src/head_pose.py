@@ -6,9 +6,11 @@ try:
     from Queue import Queue, Empty
 except ImportError:
     from queue import Queue, Empty
+
 import numpy as np
 
-import signal_processing
+from utilities import profiling
+from utilities import signal_processing
 
 _PACKAGE_PATH = path.dirname(sys.modules[__name__].__file__)
 _ROOT_PATH = path.dirname(_PACKAGE_PATH)
@@ -41,6 +43,8 @@ class HeadPose():
         self.filters = filters
         self.updated = False
 
+        self.update_rate_counter = profiling.FramerateCounter()
+
         self._tracker_process = None
         self._monitor_thread = None
 
@@ -65,6 +69,7 @@ class HeadPose():
             for (parameter, raw_value) in raw_data.items():
                 self.filters[parameter].append(raw_value)
                 self.parameters[parameter] = self.filters[parameter].estimate_current()
+            self.update_rate_counter.tick()
         self.updated = all(filtered_value is not None for filtered_value in self.parameters.values())
 
     def _start_tracker(self):

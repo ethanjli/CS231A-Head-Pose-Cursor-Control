@@ -6,9 +6,10 @@ try:
     from Queue import Queue, Empty
 except ImportError:
     from queue import Queue, Empty
+
 import numpy as np
 
-import signal_processing
+from utilities import signal_processing
 
 _PACKAGE_PATH = path.dirname(sys.modules[__name__].__file__)
 _ROOT_PATH = path.dirname(_PACKAGE_PATH)

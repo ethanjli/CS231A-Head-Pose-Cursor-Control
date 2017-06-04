@@ -1,7 +1,7 @@
 import head_pose
 
-def echo(yaw, pitch):
-    print("Yaw: " + str(yaw) + ", pitch: " + str(pitch))
+def echo(parameters):
+    print(parameters)
 
 tracker = head_pose.HeadPose()
 tracker.monitor_sync(echo)
