@@ -214,7 +214,7 @@ class StereoModelCalibration:
     if theta < 0:
       raise NoIntersectionException("Gaze direction does not intersect with screen plane.")
     intersection = new_centroid + gaze_dir * theta
-    gaze_point = intersection[0:2]
+    gaze_point = intersection[0:2] - self._initial_pos
     return gaze_point
 
 def test_run():

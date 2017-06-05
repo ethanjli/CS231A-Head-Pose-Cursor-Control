@@ -15,7 +15,7 @@ scene_manager.register_rendering_pipeline(pipeline)
 scene_manager.add_face()
 scene_manager.face_point_cloud.initialize_data(facial_landmarks.NUM_KEYPOINTS)
 
-facial_landmarks = animation.CalibratedFaceAnimator()
+facial_landmarks = animation.CalibratedCursorAnimator()
 facial_landmarks.register_rendering_pipeline(pipeline)
 facial_landmarks.register_visual_node(scene_manager.face_point_cloud)
 

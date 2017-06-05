@@ -341,6 +341,8 @@ class CalibratedFaceAnimator(CalibratedAnimator):
         self._calibration = None
         self.framerate_counter = None
         self._visual_node = None
+        self.target_filters = [signal_processing.SlidingWindowFilter(20, estimation_mode=('kernel', signal_processing.half_gaussian_window(20, 10.0)))
+                               for i in range(2)]
 
     def register_rendering_pipeline(self, pipeline):
         super(CalibratedFaceAnimator, self).register_rendering_pipeline(pipeline)
@@ -362,7 +364,10 @@ class CalibratedFaceAnimator(CalibratedAnimator):
         self.calibration = stereo_util.StereoModelCalibration(
             -stereo_cameras.TRANSLATION[0], stereo_cameras.K_LEFT, stereo_cameras.K_RIGHT,
             stereo_util.compute_3d_model(self._calibration, stereo_util.make_parallel_camera_matrices(
-                stereo_cameras.K_LEFT, stereo_cameras.K_RIGHT, -stereo_cameras.TRANSLATION[0])))
+                stereo_cameras.K_LEFT, stereo_cameras.K_RIGHT, -stereo_cameras.TRANSLATION[0])),
+            #initial_pos=np.array([0, 0]))
+            initial_pos=np.array([-stereo_cameras.TRANSLATION[0] / 2.0,
+                                  transform_util.CAMERA_Y + transform_util.MONITOR_HEIGHT / 2.0]))
         self._facial_landmarks = FacePointsAnimator(
             make_facial_calibration_filters(), make_facial_calibration_filters())
         self.framerate_counter = self._facial_landmarks.framerate_counter
@@ -381,3 +386,25 @@ class CalibratedFaceAnimator(CalibratedAnimator):
         self._visual_node.update_list_data(transformed)
         self.framerate_counter.tick()
         self._pipeline.update()
+
+class CalibratedCursorAnimator(CalibratedFaceAnimator):
+    def __init__(self):
+        super(CalibratedCursorAnimator, self).__init__()
+
+    def _update_head(self, parameters):
+        try:
+            target = self.calibration.compute_gaze_location(parameters)
+            target_px = transform_util.screen_xy_to_render_xy(*target)
+            target_px = -2 * np.array([target_px[0], target_px[1]])
+            for i in range(2):
+                self.target_filters[i].append(target_px[i])
+            target_px = np.array([[self.target_filters[0].estimate_current(),
+                                   self.target_filters[1].estimate_current(), 0.0]],
+                                 dtype='f')
+            if not np.any(np.isnan(target_px)):
+                self._visual_node.update_list_data(target_px)
+                self.framerate_counter.tick()
+                self._pipeline.update()
+        except stereo_util.NoIntersectionException:
+            pass
+
