@@ -168,7 +168,7 @@ class StereoModelCalibration:
     self._model_3d = model_3d
     self._initial_pos = initial_pos
 
-  def compute_RT(self, points):
+  def compute_RT(self, points=None, points_3d=None):
     """
     Compute the RT matrix that, when applied to the original 3d model, yields the set of
     observations in points.
@@ -183,7 +183,8 @@ class StereoModelCalibration:
       T: the translation vector (displacement of centroid from calibrated position to final
         position)
     """
-    points_3d = compute_3d_model(points, self._camera_matrices)
+    if points_3d is None:
+        points_3d = compute_3d_model(points, self._camera_matrices)
     centroid_ob = np.mean(points_3d, axis=0)
     centroid = np.mean(self._model_3d, axis=0)
     H = (points_3d - centroid_ob).T.dot(self._model_3d - centroid)
@@ -192,7 +193,7 @@ class StereoModelCalibration:
     T = centroid_ob - centroid
     return R.T, T
 
-  def compute_gaze_location(self, points):
+  def compute_gaze_location(self, points=None, points_3d=None):
     """
     Compute the location that a user is looking at given a set of keypoints.
 
@@ -205,7 +206,10 @@ class StereoModelCalibration:
         in the same units as camera matricess and measured relative to position of camera. uses same
         +x and +y axis as described in __init__.
     """
-    R, T = self.compute_RT(points)
+    if points_3d is None:
+        R, T = self.compute_RT(points)
+    else:
+        R, T = self.compute_RT(points_3d=points_3d)
     centroid = np.mean(self._model_3d, axis=0)
     base_gaze_dir = np.append(self._initial_pos, 0) - centroid
     gaze_dir = R.dot(base_gaze_dir)

@@ -21,7 +21,7 @@ _FACIAL_LANDMARK_MODEL_PATH = path.join(_ROOT_PATH, 'ext', 'dlib', 'shape_predic
 _FACIAL_LANDMARK_TRACKER_ARGS = [_FACIAL_LANDMARK_TRACKER_PATH, '--show',
                                  '--model', _FACIAL_LANDMARK_MODEL_PATH]
 
-NUM_KEYPOINTS = 69
+NUM_KEYPOINTS = 52
 
 DEFAULT_FILTERS = [[signal_processing.SlidingWindowFilter(
                         20, estimation_mode=('kernel', signal_processing.half_gaussian_window(20, 10.0)))

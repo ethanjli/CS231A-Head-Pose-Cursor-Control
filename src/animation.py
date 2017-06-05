@@ -16,8 +16,8 @@ _HEAD_POSE_POSTPROCESSORS = {
     'yaw': lambda value: -1 * value,
     'pitch': lambda value: -1 * value,
     'roll': lambda value: -1 * value,
-    'x': lambda value: 63.5 * value,  # cm that the camera is to the left of the center of the head
-    'y': lambda value: -93 * value,  # cm, just a scaling factor due to the calibration technique
+    'x': lambda value: -63.5 * value,  # cm that the camera is to the left of the center of the head
+    'y': lambda value: 93 * value,  # cm, just a scaling factor due to the calibration technique
     'z': lambda value: 58.28 * value - 1.7  # cm between the camera and the head
 }
 
@@ -234,6 +234,10 @@ def make_facial_calibration_filters():
     return [[signal_processing.SlidingWindowFilter(20, estimation_mode='mean')
              for j in range(2)] for i in range(facial_landmarks.NUM_KEYPOINTS)]
 
+def make_facial_raw_filters():
+    return [[signal_processing.SlidingWindowFilter(2, estimation_mode='raw')
+             for j in range(2)] for i in range(facial_landmarks.NUM_KEYPOINTS)]
+
 class FacialLandmarkAnimator(AsynchronousAnimator):
     """Asynchronously updates a rendering pipeline with facial landmarks."""
     def __init__(self, left_filters, right_filters):
@@ -341,6 +345,8 @@ class CalibratedFaceAnimator(CalibratedAnimator):
         self._calibration = None
         self.framerate_counter = None
         self._visual_node = None
+        self.points_3d_filters = [[signal_processing.SlidingWindowFilter(20, estimation_mode='mean')
+                                   for j in range(3)]for i in range(facial_landmarks.NUM_KEYPOINTS)]
         self.target_filters = [signal_processing.SlidingWindowFilter(20, estimation_mode=('kernel', signal_processing.half_gaussian_window(20, 10.0)))
                                for i in range(2)]
 
@@ -369,7 +375,7 @@ class CalibratedFaceAnimator(CalibratedAnimator):
             initial_pos=np.array([-stereo_cameras.TRANSLATION[0] / 2.0,
                                   transform_util.CAMERA_Y + transform_util.MONITOR_HEIGHT / 2.0]))
         self._facial_landmarks = FacePointsAnimator(
-            make_facial_calibration_filters(), make_facial_calibration_filters())
+            make_facial_raw_filters(), make_facial_raw_filters())
         self.framerate_counter = self._facial_landmarks.framerate_counter
         self._facial_landmarks.animate_async(self._update_head)
 
@@ -393,7 +399,13 @@ class CalibratedCursorAnimator(CalibratedFaceAnimator):
 
     def _update_head(self, parameters):
         try:
-            target = self.calibration.compute_gaze_location(parameters)
+            points_3d = stereo_util.compute_3d_model(parameters, self.calibration._camera_matrices)
+            points_3d_filtered = np.empty_like(points_3d)
+            for i in range(facial_landmarks.NUM_KEYPOINTS):
+                for j in range(3):
+                    self.points_3d_filters[i][j].append(points_3d[i,j])
+                    points_3d_filtered[i,j] = self.points_3d_filters[i][j].estimate_current()
+            target = self.calibration.compute_gaze_location(points_3d=points_3d_filtered)
             target_px = transform_util.screen_xy_to_render_xy(*target)
             target_px = -2 * np.array([target_px[0], target_px[1]])
             for i in range(2):

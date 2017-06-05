@@ -32,8 +32,8 @@ DEFAULT_FILTERS = {
     'pitch': signal_processing.SlidingWindowThresholdFilter(window_size=10, threshold=1,
                                                             nonstationary_transition_smoothness=4),
     'roll': signal_processing.SlidingWindowThresholdFilter(**DEFAULT_ANGLE_PARAMETERS),
-    'x': signal_processing.SlidingWindowThresholdFilter(threshold=0.01),
-    'y': signal_processing.SlidingWindowThresholdFilter(threshold=0.018),
+    'x': signal_processing.SlidingWindowThresholdFilter(threshold=0.005),
+    'y': signal_processing.SlidingWindowThresholdFilter(threshold=0.005),
     'z': signal_processing.SlidingWindowThresholdFilter()
 }
 

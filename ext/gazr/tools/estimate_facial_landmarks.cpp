@@ -136,7 +136,7 @@ int main(int argc, char **argv)
         for(auto landmarks : all_landmarks) {
             cout << "\"face_" << i << "\": [";
             cout << setprecision(4) << fixed;
-            for (unsigned long j = 0; j < 69; ++j) {
+            for (unsigned long j = 0; j < landmarks.size(); ++j) {
                 if (j > 0) cout << ", ";
                 cout << "[" << landmarks[j].x << ", " << landmarks[j].y << "]";
             }

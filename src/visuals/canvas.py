@@ -13,7 +13,7 @@ def checkerboard(grid_num=8, grid_size=32):
     return 255 * Z.repeat(grid_size, axis=0).repeat(grid_size, axis=1)
 
 class CanvasVisual(visuals.CustomVisual):
-    def __init__(self, scale=400):
+    def __init__(self, scale=10):
         super(CanvasVisual, self).__init__()
         self.program = visuals.load_shader_program(VERTEX_SHADER_FILENAME,
                                                    FRAGMENT_SHADER_FILENAME)

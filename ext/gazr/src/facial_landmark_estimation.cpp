@@ -105,7 +105,7 @@ landmarks_t FacialLandmarkEstimation::landmarks(size_t face_idx) const
 {
     std::vector<Point2f> detected_points;
 
-    for (unsigned long i = 0; i < 68; ++i) {
+    for (unsigned long i : points_to_use) {
         detected_points.push_back(coordsOf(face_idx, i));
     }
 
