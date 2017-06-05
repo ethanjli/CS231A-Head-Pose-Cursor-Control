@@ -21,9 +21,9 @@ _HEAD_POSE_POSTPROCESSORS = {
     'z': lambda value: 58.28 * value - 1.7  # cm between the camera and the head
 }
 
-_CALIBRATION_FILTERS = {parameter: signal_processing.SlidingWindowFilter(
-                            40, estimation_mode=('kernel', signal_processing.half_gaussian_window(40, 20.0)))
-                        for parameter in head_pose.PARAMETERS}
+_HEAD_POSE_CALIBRATION_FILTERS = {parameter: signal_processing.SlidingWindowFilter(
+                                      40, estimation_mode=('kernel', signal_processing.half_gaussian_window(40, 20.0)))
+                                  for parameter in head_pose.PARAMETERS}
 
 class AsynchronousAnimator(object):
     """Abstract class for animators which run asynchronously in a thread."""
@@ -32,15 +32,16 @@ class AsynchronousAnimator(object):
         self._animate = True
         self.animator_name = animator_name
 
-    def animate_sync(self):
+    def animate_sync(self, callback=None):
         while self._animate:
-            self.execute()
+            self.execute(callback)
 
-    def animate_async(self):
+    def animate_async(self, callback=None):
         if self._animator_thread is not None:
             return
         self._animator_thread = threading.Thread(target=self.animate_sync,
-                                                 name=self.animator_name)
+                                                 name=self.animator_name,
+                                                 kwargs={'callback': callback})
         self._animator_thread.start()
 
     def stop_animating(self):
@@ -49,7 +50,7 @@ class AsynchronousAnimator(object):
             self._animator_thread.join()
             self._animator_thread = None
 
-    def execute(self):
+    def execute(self, callback=None):
         pass
 
 class CalibratedAnimator(object):
@@ -180,7 +181,7 @@ class ScreenStabilizer(CalibratedAnimator):
         self._visual_node = visual_node
 
     def on_start_calibrating(self):
-        self._head_pose = HeadVisualAnimator(_HEAD_POSE_POSTPROCESSORS, _CALIBRATION_FILTERS)
+        self._head_pose = HeadVisualAnimator(_HEAD_POSE_POSTPROCESSORS, _HEAD_POSE_CALIBRATION_FILTERS)
         self.framerate_counter = self._head_pose.framerate_counter
         self._head_pose.register_rendering_pipeline(self._pipeline)
         self._head_pose.register_visual_node(self._head_visual_node)
@@ -229,15 +230,21 @@ class ScreenStabilizer(CalibratedAnimator):
 
 # STEREO ANIMATION
 
+def make_facial_calibration_filters():
+    return [[signal_processing.SlidingWindowFilter(20, estimation_mode='mean')
+             for j in range(2)] for i in range(facial_landmarks.NUM_KEYPOINTS)]
+
 class FacialLandmarkAnimator(AsynchronousAnimator):
     """Asynchronously updates a rendering pipeline with facial landmarks."""
-    def __init__(self):
+    def __init__(self, left_filters, right_filters):
         super(FacialLandmarkAnimator, self).__init__('FacialLandmarkAnimator')
         self._pipeline = None
         self._visual_node = None
 
-        self._tracker_left = facial_landmarks.FacialLandmarks(camera_index=0)
-        self._tracker_right = facial_landmarks.FacialLandmarks(camera_index=1)
+        self._tracker_left = facial_landmarks.FacialLandmarks(
+            camera_index=0, filters=left_filters)
+        self._tracker_right = facial_landmarks.FacialLandmarks(
+            camera_index=1, filters=right_filters)
         self._left_keypoints = None
         self._left_keypoints_updated = False
         self._right_keypoints = None
@@ -253,10 +260,10 @@ class FacialLandmarkAnimator(AsynchronousAnimator):
     def register_visual_node(self, visual_node):
         self._visual_node = visual_node
 
-    def animate_sync(self):
+    def animate_sync(self, callback=None):
         self._tracker_left.monitor_async(self._update_left_keypoints)
         self._tracker_right.monitor_async(self._update_right_keypoints)
-        super(FacialLandmarkAnimator, self).animate_sync()
+        super(FacialLandmarkAnimator, self).animate_sync(callback)
 
     def _update_left_keypoints(self, parameters):
         self._left_keypoints = parameters
@@ -276,11 +283,13 @@ class FacialLandmarkAnimator(AsynchronousAnimator):
         self._tracker_right.stop_monitoring()
         super(FacialLandmarkAnimator, self).stop_animating()
 
-    def execute(self):
+    def execute(self, callback=None):
         if self._left_keypoints_updated and self._right_keypoints_updated:
             keypoints = np.stack([self._left_keypoints, self._right_keypoints], axis=1)
-            print keypoints.shape
-            self.on_update(keypoints)
+            if callback is None:
+                self.on_update(keypoints)
+            else:
+                callback(keypoints)
             self._left_keypoints_updated = False
             self._right_keypoints_updated = False
 
@@ -309,8 +318,8 @@ class FaceAxesAnimator(FacialLandmarkAnimator):
         self._pipeline.update()
 
 class FacePointsAnimator(FacialLandmarkAnimator):
-    def __init__(self):
-        super(FacePointsAnimator, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(FacePointsAnimator, self).__init__(*args, **kwargs)
         self._camera_matrices = stereo_util.make_parallel_camera_matrices(
             stereo_cameras.K_LEFT, stereo_cameras.K_RIGHT, -stereo_cameras.TRANSLATION[0])
 
@@ -322,5 +331,53 @@ class FacePointsAnimator(FacialLandmarkAnimator):
         face = stereo_util.compute_3d_model(keypoints, self._camera_matrices)
         #print face
         self._visual_node.update_list_data(face)
+        self.framerate_counter.tick()
+        self._pipeline.update()
+
+class CalibratedFaceAnimator(CalibratedAnimator):
+    def __init__(self):
+        super(CalibratedFaceAnimator, self).__init__()
+        self.calibration = None
+        self._calibration = None
+        self.framerate_counter = None
+        self._visual_node = None
+
+    def register_rendering_pipeline(self, pipeline):
+        super(CalibratedFaceAnimator, self).register_rendering_pipeline(pipeline)
+        self._pipeline = pipeline
+
+    def register_visual_node(self, visual_node):
+        self._visual_node = visual_node
+
+    def on_start_calibrating(self):
+        self._facial_landmarks = FacePointsAnimator(
+            make_facial_calibration_filters(), make_facial_calibration_filters())
+        self.framerate_counter = self._facial_landmarks.framerate_counter
+        self._facial_landmarks.register_rendering_pipeline(self._pipeline)
+        self._facial_landmarks.register_visual_node(self._visual_node)
+        self._facial_landmarks.animate_async(self._update_calibration)
+
+    def on_start_responding(self):
+        self._facial_landmarks.stop_animating()
+        self.calibration = stereo_util.StereoModelCalibration(
+            -stereo_cameras.TRANSLATION[0], stereo_cameras.K_LEFT, stereo_cameras.K_RIGHT,
+            stereo_util.compute_3d_model(self._calibration, stereo_util.make_parallel_camera_matrices(
+                stereo_cameras.K_LEFT, stereo_cameras.K_RIGHT, -stereo_cameras.TRANSLATION[0])))
+        self._facial_landmarks = FacePointsAnimator(
+            make_facial_calibration_filters(), make_facial_calibration_filters())
+        self.framerate_counter = self._facial_landmarks.framerate_counter
+        self._facial_landmarks.animate_async(self._update_head)
+
+    def stop_animating(self):
+        self._facial_landmarks.stop_animating()
+
+    def _update_calibration(self, parameters):
+        self._calibration = parameters
+        self._facial_landmarks.on_update(parameters)
+
+    def _update_head(self, parameters):
+        (rotation, translation) = self.calibration.compute_RT(parameters)
+        transformed = stereo_util.apply_transformation(self.calibration._model_3d, rotation, translation)
+        self._visual_node.update_list_data(transformed)
         self.framerate_counter.tick()
         self._pipeline.update()

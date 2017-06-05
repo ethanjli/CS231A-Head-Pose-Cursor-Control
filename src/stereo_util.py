@@ -73,7 +73,7 @@ def compute_3d_model(points, camera_matrices):
 # Output is in degrees.
 def rotationMatrixToEulerAngles(R):
   sy = np.sqrt(R[0,0] * R[0,0] +  R[1,0] * R[1,0])
-   
+
   singular = sy < 1e-6
 
   if not singular :
@@ -133,8 +133,14 @@ def make_parallel_camera_matrices(K1, K2, camera_distance):
   camera_matrices = np.zeros((2,3,4))
   camera_matrices[0] = np.concatenate([K1, np.zeros((3,1))], axis=1)
   M2 = K1.dot(np.concatenate([np.eye(3), np.array([[-camera_distance,0,0]]).T], axis=1))
-  camera_matrices[1] = M2  
+  camera_matrices[1] = M2
   return camera_matrices
+
+def apply_transformation(model_3d, R, T):
+  centered = model_3d - np.mean(model_3d, axis=0)
+  rotated = centered.dot(R.T)
+  final = rotated + np.mean(model_3d, axis=0) + T
+  return final
 
 class NoIntersectionException(Exception):
   pass
