@@ -105,13 +105,9 @@ landmarks_t FacialLandmarkEstimation::landmarks(size_t face_idx) const
 {
     std::vector<Point2f> detected_points;
 
-    detected_points.push_back(coordsOf(face_idx, SELLION));
-    detected_points.push_back(coordsOf(face_idx, RIGHT_EYE));
-    detected_points.push_back(coordsOf(face_idx, LEFT_EYE));
-    detected_points.push_back(coordsOf(face_idx, RIGHT_SIDE));
-    detected_points.push_back(coordsOf(face_idx, LEFT_SIDE));
-    detected_points.push_back(coordsOf(face_idx, MENTON));
-    detected_points.push_back(coordsOf(face_idx, NOSE));
+    for (unsigned long i = 0; i < 68; ++i) {
+        detected_points.push_back(coordsOf(face_idx, i));
+    }
 
     auto stomion = (coordsOf(face_idx, MOUTH_CENTER_TOP) + coordsOf(face_idx, MOUTH_CENTER_BOTTOM)) * 0.5;
     detected_points.push_back(stomion);
@@ -134,4 +130,8 @@ std::vector<landmarks_t> FacialLandmarkEstimation::all_landmarks() const
 Point2f FacialLandmarkEstimation::coordsOf(size_t face_idx, FACIAL_FEATURE feature) const
 {
     return toCv(shapes[face_idx].part(feature));
+}
+Point2f FacialLandmarkEstimation::coordsOf(size_t face_idx, unsigned long index) const
+{
+    return toCv(shapes[face_idx].part(index));
 }

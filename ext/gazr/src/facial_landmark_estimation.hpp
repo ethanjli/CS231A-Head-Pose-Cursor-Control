@@ -70,6 +70,9 @@ private:
     /** Return the point corresponding to the dictionary marker.
     */
     cv::Point2f coordsOf(size_t face_idx, FACIAL_FEATURE feature) const;
+    /** Return the point corresponding to the index.
+    */
+    cv::Point2f coordsOf(size_t face_idx, unsigned long index) const;
 
 };
 

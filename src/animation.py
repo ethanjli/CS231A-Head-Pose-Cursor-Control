@@ -25,11 +25,6 @@ _CALIBRATION_FILTERS = {parameter: signal_processing.SlidingWindowFilter(
                             40, estimation_mode=('kernel', signal_processing.half_gaussian_window(40, 20.0)))
                         for parameter in head_pose.PARAMETERS}
 
-STEREO_CALIBRATION = stereo_util.StereoModelCalibration(
-    -stereo_cameras.TRANSLATION[0], stereo_cameras.K_LEFT, stereo_cameras.K_RIGHT,
-    np.vstack([facial_landmarks.MODEL[parameter]
-               for parameter in facial_landmarks.PARAMETERS]))
-
 class AsynchronousAnimator(object):
     """Abstract class for animators which run asynchronously in a thread."""
     def __init__(self, animator_name='AsynchronousAnimator'):
@@ -243,10 +238,10 @@ class FacialLandmarkAnimator(AsynchronousAnimator):
 
         self._tracker_left = facial_landmarks.FacialLandmarks(camera_index=0)
         self._tracker_right = facial_landmarks.FacialLandmarks(camera_index=1)
-        self._left_landmarks = None
-        self._left_landmarks_updated = False
-        self._right_landmarks = None
-        self._right_landmarks_updated = False
+        self._left_keypoints = None
+        self._left_keypoints_updated = False
+        self._right_keypoints = None
+        self._right_keypoints_updated = False
         self.framerate_counter = profiling.FramerateCounter()
 
     def register_rendering_pipeline(self, pipeline):
@@ -259,17 +254,17 @@ class FacialLandmarkAnimator(AsynchronousAnimator):
         self._visual_node = visual_node
 
     def animate_sync(self):
-        self._tracker_left.monitor_async(self._update_left_landmarks)
-        self._tracker_right.monitor_async(self._update_right_landmarks)
+        self._tracker_left.monitor_async(self._update_left_keypoints)
+        self._tracker_right.monitor_async(self._update_right_keypoints)
         super(FacialLandmarkAnimator, self).animate_sync()
 
-    def _update_left_landmarks(self, parameters):
-        self._left_landmarks = parameters
-        self._left_landmarks_updated = True
+    def _update_left_keypoints(self, parameters):
+        self._left_keypoints = parameters
+        self._left_keypoints_updated = True
 
-    def _update_right_landmarks(self, parameters):
-        self._right_landmarks = parameters
-        self._right_landmarks_updated = True
+    def _update_right_keypoints(self, parameters):
+        self._right_keypoints = parameters
+        self._right_keypoints_updated = True
 
     def stop_animating(self):
         """Stops updating a RenderingPipeline.
@@ -282,12 +277,12 @@ class FacialLandmarkAnimator(AsynchronousAnimator):
         super(FacialLandmarkAnimator, self).stop_animating()
 
     def execute(self):
-        if self._left_landmarks_updated and self._right_landmarks_updated:
-            keypoints = np.array([[self._left_landmarks[parameter], self._right_landmarks[parameter]]
-                                for parameter in facial_landmarks.PARAMETERS])
+        if self._left_keypoints_updated and self._right_keypoints_updated:
+            keypoints = np.stack([self._left_keypoints, self._right_keypoints], axis=1)
+            print keypoints.shape
             self.on_update(keypoints)
-            self._left_landmarks_updated = False
-            self._right_landmarks_updated = False
+            self._left_keypoints_updated = False
+            self._right_keypoints_updated = False
 
     def on_update(self, keypoints):
         pass
@@ -316,12 +311,16 @@ class FaceAxesAnimator(FacialLandmarkAnimator):
 class FacePointsAnimator(FacialLandmarkAnimator):
     def __init__(self):
         super(FacePointsAnimator, self).__init__()
+        self._camera_matrices = stereo_util.make_parallel_camera_matrices(
+            stereo_cameras.K_LEFT, stereo_cameras.K_RIGHT, -stereo_cameras.TRANSLATION[0])
+
 
     def register_rendering_pipeline(self, pipeline):
         super(FacePointsAnimator, self).register_rendering_pipeline(pipeline)
 
     def on_update(self, keypoints):
-        face = stereo_util.compute_3d_model(keypoints, STEREO_CALIBRATION._camera_matrices)
+        face = stereo_util.compute_3d_model(keypoints, self._camera_matrices)
+        #print face
         self._visual_node.update_list_data(face)
         self.framerate_counter.tick()
         self._pipeline.update()

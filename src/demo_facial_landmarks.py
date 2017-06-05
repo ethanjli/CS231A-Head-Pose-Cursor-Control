@@ -13,7 +13,7 @@ pipeline = render.RenderingPipeline(VIEW_PRESETS['1']['camera'])
 scene_manager = scene_manager.SceneManager(VIEW_PRESETS)
 scene_manager.register_rendering_pipeline(pipeline)
 scene_manager.add_face()
-scene_manager.face_point_cloud.initialize_data(len(facial_landmarks.MODEL))
+scene_manager.face_point_cloud.initialize_data(facial_landmarks.NUM_KEYPOINTS)
 
 facial_landmarks = animation.FacePointsAnimator()
 facial_landmarks.register_rendering_pipeline(pipeline)

@@ -20,32 +20,18 @@ _FACIAL_LANDMARK_MODEL_PATH = path.join(_ROOT_PATH, 'ext', 'dlib', 'shape_predic
 _FACIAL_LANDMARK_TRACKER_ARGS = [_FACIAL_LANDMARK_TRACKER_PATH, '--show',
                                  '--model', _FACIAL_LANDMARK_MODEL_PATH]
 
-# Anthropometric for male adult
-# Relative position of various facial feature relative to sellion
-# Values taken from https://en.wikipedia.org/wiki/Human_head
-# X points forward
-MODEL = {
-    'sellion': np.array([0.0, 0.0, 0.0]),
-    'right_eye': np.array([-20.0, -65.5, -5.0]),
-    'left_eye': np.array([-20.0, 65.5, -5.0]),
-    'right_ear': np.array([-100.0, -77.5, -6.0]),
-    'left_ear': np.array([-100.0, 77.5, -6.0]),
-    'nose': np.array([21.0, 0.0, -48.0]),
-    'stommion': np.array([10.0, 0.0, -75.0]),
-    'menton': np.array([0.0, 0.0, -133.0])
-}
-PARAMETERS = ['sellion', 'right_eye', 'left_eye', 'right_ear', 'left_ear', 'nose', 'stommion', 'menton']
+NUM_KEYPOINTS = 69
 
 class FacialLandmarks(monitoring.Monitor):
     """Consumes facial landmark tracking stream from stdin and updates."""
     def __init__(self, camera_index=0):
         super(FacialLandmarks, self).__init__()
-        self.parameters = {parameter: None for parameter in MODEL.keys()}
+        self.parameters = np.zeros((NUM_KEYPOINTS, 2))
         self.camera_index = camera_index
 
     def on_update(self, data):
         if "face_0" in data:
-            self.parameters = {parameter: data['face_0'][parameter] for parameter in PARAMETERS}
+            self.parameters = np.array(data['face_0'])
             self.updated = True
 
     def get_tracker_args(self):

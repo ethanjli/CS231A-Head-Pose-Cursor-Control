@@ -134,17 +134,13 @@ int main(int argc, char **argv)
         cout << "{";
 
         for(auto landmarks : all_landmarks) {
-            cout << "\"face_" << i << "\":";
-            cout << setprecision(4) << fixed
-                 << "{\"sellion\": (" << landmarks[0].x << ", " << landmarks[0].y << ")"
-                 << ", \"right_eye\": (" << landmarks[1].x << ", " << landmarks[1].y << ")"
-                 << ", \"left_eye\": (" << landmarks[2].x << ", " << landmarks[2].y << ")"
-                 << ", \"right_ear\": (" << landmarks[3].x << ", " << landmarks[3].y << ")"
-                 << ", \"left_ear\": (" << landmarks[4].x << ", " << landmarks[4].y << ")"
-                 << ", \"menton\": (" << landmarks[5].x << ", " << landmarks[5].y << ")"
-                 << ", \"nose\": (" << landmarks[6].x << ", " << landmarks[6].y << ")"
-                 << ", \"stommion\": (" << landmarks[7].x << ", " << landmarks[7].y << ")"
-                 << "},";
+            cout << "\"face_" << i << "\": [";
+            cout << setprecision(4) << fixed;
+            for (unsigned long j = 0; j < 68; ++j) {
+                if (j > 0) cout << ", ";
+                cout << "[" << landmarks[j].x << ", " << landmarks[j].y << "]";
+            }
+            cout << "],";
 
             i++;
         }
