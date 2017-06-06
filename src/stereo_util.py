@@ -184,7 +184,7 @@ class StereoModelCalibration:
         position)
     """
     if points_3d is None:
-        points_3d = compute_3d_model(points, self._camera_matrices)
+      points_3d = compute_3d_model(points, self._camera_matrices)
     centroid_ob = np.mean(points_3d, axis=0)
     centroid = np.mean(self._model_3d, axis=0)
     H = (points_3d - centroid_ob).T.dot(self._model_3d - centroid)
@@ -193,7 +193,62 @@ class StereoModelCalibration:
     T = centroid_ob - centroid
     return R.T, T
 
-  def compute_gaze_location(self, points=None, points_3d=None):
+  def compute_RT_ransac(self, threshold=1, numiter=100, points=None, points_3d=None):
+    """
+    Compute the RT matrix that, when applied to the original 3d model, yields the set of
+    observations in points.
+
+    Arguments:
+      points: a N x 2 x 2 set of points corresponding to positions on images taken by the two cameras.
+        second to last index corresponds to camera number.
+      threshold: the maximum permissible distance error in centimeters
+
+    Returns:
+      R: the rotation matrix (to be applied about the centroid of the object) that changes the 3d
+        model to the observed points
+      T: the translation vector (displacement of centroid from calibrated position to final
+        position)
+    """
+    if points_3d is None:
+      points_3d = compute_3d_model(points, self._camera_matrices)
+
+    N = points_3d.shape[0]
+    inliers = np.array([])
+    centroid_mod = np.mean(self._model_3d, axis=0)
+    model_centered = self._model_3d - centroid_mod
+    for i in xrange(numiter):
+      indices = np.random.choice(N, size=4, replace=False)
+      centroid_ob = np.mean(points_3d[indices,:], axis=0)
+      points_centered = points_3d[indices,:] - centroid_ob
+      H = points_centered.T.dot(model_centered[indices,:])
+      U, s, V = np.linalg.svd(H)
+      R = V.T.dot(U.T).T
+      transformed_model = model_centered.dot(R.T) + centroid_mod
+      T = np.mean(points_3d[indices,:] - transformed_model[indices,:], axis=0)
+      transformed_model += T
+      distances = np.linalg.norm(transformed_model - points_3d, ord=2, axis=1)
+      new_inliers = np.nonzero(distances <= threshold)[0]
+      if len(new_inliers) > len(inliers):
+        inliers = new_inliers
+
+    # centroid_ob = np.mean(points_3d[inliers,:], axis=0)
+    # centroid = np.mean(self._model_3d[inliers,:], axis=0)
+    # H = (points_3d[inliers,:] - centroid_ob).T.dot(self._model_3d[inliers,:] - centroid)
+    # U, s, V = np.linalg.svd(H)
+    # R = V.T.dot(U.T)
+    # T = centroid_ob - centroid
+    # return R.T, T, inliers
+
+    centroid_ob = np.mean(points_3d[inliers,:], axis=0)
+    points_centered = points_3d[inliers,:] - centroid_ob
+    H = points_centered.T.dot(model_centered[inliers,:])
+    U, s, V = np.linalg.svd(H)
+    R = V.T.dot(U.T)
+    transformed_model = model_centered.dot(R) + centroid_mod
+    T = np.mean(points_3d[inliers,:] - transformed_model[inliers,:], axis=0)
+    return R.T, T, inliers
+
+  def compute_gaze_location(self, points=None, points_3d=None, use_ransac=False):
     """
     Compute the location that a user is looking at given a set of keypoints.
 
@@ -206,9 +261,15 @@ class StereoModelCalibration:
         in the same units as camera matricess and measured relative to position of camera. uses same
         +x and +y axis as described in __init__.
     """
-    if points_3d is None:
-        R, T = self.compute_RT(points)
+    if use_ransac:
+      if points_3d is None:
+        R, T, inliers = self.compute_RT_ransac(points=points)
+      else:
+        R, T, inliers = self.compute_RT_ransac(points_3d=points_3d)
     else:
+      if points_3d is None:
+        R, T = self.compute_RT(points)
+      else:
         R, T = self.compute_RT(points_3d=points_3d)
     centroid = np.mean(self._model_3d, axis=0)
     base_gaze_dir = np.append(self._initial_pos, 0) - centroid
@@ -260,16 +321,32 @@ def test_run():
   shifted_model += T
   points = map_3d_model(shifted_model, smc._camera_matrices)
   points += np.random.randn(*points.shape) * 0.00 # Add noise if desired
-  R_com, T_com = smc.compute_RT(points)
+  points[1,:,:] += 124 # Ransac shift test
+
+  # print "WITHOUT RANSAC"
+  # try:
+  #   R_com, T_com = smc.compute_RT(points=points)
+  #   print 'R_act', R
+  #   print 'T_act', T
+  #   print 'R_com', R_com
+  #   print 'T_com', T_com
+  #   print 'act euler angles:', rotationMatrixToEulerAngles(R)
+  #   print 'com euler angles:', rotationMatrixToEulerAngles(R_com)
+  # except NoIntersectionException:
+  #   pass
+
+  print "WITH RANSAC"
+  R_com, T_com, inliers = smc.compute_RT_ransac(points=points)
   print 'R_act', R
   print 'T_act', T
   print 'R_com', R_com
   print 'T_com', T_com
   print 'act euler angles:', rotationMatrixToEulerAngles(R)
   print 'com euler angles:', rotationMatrixToEulerAngles(R_com)
+  print 'inliers:', inliers
 
   # Test compute_gaze_location
-  point = smc.compute_gaze_location(points)
+  point = smc.compute_gaze_location(points=points, use_ransac=True)
   print 'gaze point:', point
   return smc
 
