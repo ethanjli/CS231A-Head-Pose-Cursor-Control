@@ -1,5 +1,8 @@
+import time
+
 import scipy.signal
 import numpy as np
+import cv2
 
 import util
 
@@ -110,3 +113,69 @@ class SlidingWindowThresholdFilter(SlidingWindowFilter):
 
     def estimate_stationary_value(self):
         return self.get_mean()
+
+class KalmanFilter(object):
+    def __init__(self):
+        self.kalman = cv2.KalmanFilter(3, 1, 0)
+        self.kalman.statePre = np.zeros((3, 1), np.float32)
+        self.kalman.measurementMatrix = np.array([[1, 0, 0]], np.float32)
+        self.kalman.measurementNoiseCov = np.array([100], np.float32)
+        self.kalman.errorCovPost = np.eye(3, dtype=np.float32) * 4
+
+        self.last_measurement_time = None
+        self.estimated = None
+
+    def append(self, x):
+        current_time = time.time()
+        if self.last_measurement_time is None:
+            self.last_measurement_time = current_time
+        else:
+            dt = current_time - self.last_measurement_time
+            self.last_measurement_time = current_time
+            self.kalman.transitionMatrix = np.array(
+                [[1, dt, 0.5 * dt ** 2], [0, 1, dt], [0, 0, 1]], np.float32)
+            self.kalman.processNoiseCov = np.array(
+                [[1.0 / 9 * dt ** 6, 1.0 / 6 * dt ** 5, 1.0 / 3 * dt ** 4],
+                 [1.0 / 6 * dt ** 5, 1.0 / 4 * dt ** 4, 1.0 / 2 * dt ** 3],
+                 [1.0 / 3 * dt ** 4, 1.0 / 2 * dt ** 3, dt]], np.float32) * 100
+
+        self.kalman.predict()
+        if x is not None:
+            self.estimated = self.kalman.correct(np.array([[x]], np.float32)).ravel()
+        else:
+            self.estimated = prediction.ravel()
+        print self.estimated[2]
+
+    def estimate_current(self):
+        return self.estimated[0]
+
+class ThresholdKalmanFilter(KalmanFilter):
+    def __init__(self, position_from_stationary=5, velocity_from_stationary=5, acceleration_from_stationary=8,
+                 velocity_to_stationary=5, acceleration_to_stationary=5):
+        super(ThresholdKalmanFilter, self).__init__()
+        self.position_from_stationary = position_from_stationary
+        self.velocity_from_stationary = velocity_from_stationary
+        self.acceleration_from_stationary = acceleration_from_stationary
+        self.velocity_to_stationary = velocity_to_stationary
+        self.acceleration_to_stationary = acceleration_to_stationary
+        self._stationary_value = None
+
+    def append(self, x):
+        super(ThresholdKalmanFilter, self).append(x)
+        abs_velocity = abs(self.estimated[1])
+        abs_acceleration = abs(self.estimated[2])
+        if self._stationary_value is None:
+            if (abs_velocity < self.velocity_to_stationary and
+                    abs_acceleration < self.acceleration_to_stationary):
+                self._stationary_value = self.estimated[0]
+        else:
+            abs_position = abs(self.estimated[0] - self._stationary_value)
+            if (abs_position > self.position_from_stationary
+                    or abs_velocity > self.velocity_from_stationary or
+                    abs_acceleration > self.acceleration_from_stationary):
+                self._stationary_value = None
+
+    def estimate_current(self):
+        if self._stationary_value is not None:
+            return self._stationary_value
+        return super(ThresholdKalmanFilter, self).estimate_current()

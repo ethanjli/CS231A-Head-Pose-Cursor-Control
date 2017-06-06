@@ -349,6 +349,8 @@ class CalibratedFaceAnimator(CalibratedAnimator):
                                    for j in range(3)]for i in range(facial_landmarks.NUM_KEYPOINTS)]
         self.target_filters = [signal_processing.SlidingWindowFilter(20, estimation_mode=('kernel', signal_processing.half_gaussian_window(20, 10.0)))
                                for i in range(2)]
+        self.target_filters = [signal_processing.KalmanFilter()
+                               for i in range(2)]
 
     def register_rendering_pipeline(self, pipeline):
         super(CalibratedFaceAnimator, self).register_rendering_pipeline(pipeline)
