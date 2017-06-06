@@ -193,7 +193,7 @@ class StereoModelCalibration:
     T = centroid_ob - centroid
     return R.T, T
 
-  def compute_RT_ransac(self, threshold=1, numiter=100, points=None, points_3d=None):
+  def compute_RT_ransac(self, threshold=1, num_iter=100, points=None, points_3d=None):
     """
     Compute the RT matrix that, when applied to the original 3d model, yields the set of
     observations in points.
@@ -202,7 +202,7 @@ class StereoModelCalibration:
       points: a N x 2 x 2 set of points corresponding to positions on images taken by the two cameras.
         second to last index corresponds to camera number.
       threshold: the maximum permissible distance error in centimeters
-      numiter: the number of iterations to run RANSAC
+      num_iter: the number of iterations to run RANSAC
 
     Returns:
       R: the rotation matrix (to be applied about the centroid of the object) that changes the 3d
@@ -217,7 +217,7 @@ class StereoModelCalibration:
     inliers = np.array([])
     centroid_mod = np.mean(self._model_3d, axis=0)
     model_centered = self._model_3d - centroid_mod
-    for i in xrange(numiter):
+    for i in xrange(num_iter):
       indices = np.random.choice(N, size=4, replace=False)
       centroid_ob = np.mean(points_3d[indices,:], axis=0)
       points_centered = points_3d[indices,:] - centroid_ob
@@ -258,7 +258,7 @@ class StereoModelCalibration:
         second to last index corresponds to camera number.
       use_ransac: whether or not to use RANSAC
       threshold: the maximum permissible distance error in centimeters (RANSAC only)
-      numiter: the number of iterations to run RANSAC
+      num_iter: the number of iterations to run RANSAC
 
     Returns:
       gaze_point: a 2 long vector containing the location on the screen the user is looking at,

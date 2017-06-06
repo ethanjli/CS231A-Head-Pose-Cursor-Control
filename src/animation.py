@@ -405,7 +405,8 @@ class CalibratedCursorAnimator(CalibratedFaceAnimator):
                 for j in range(3):
                     self.points_3d_filters[i][j].append(points_3d[i,j])
                     points_3d_filtered[i,j] = self.points_3d_filters[i][j].estimate_current()
-            target = self.calibration.compute_gaze_location(points_3d=points_3d_filtered)
+            target = self.calibration.compute_gaze_location(points_3d=points_3d_filtered, use_ransac=True,
+                                                            threshold=10, num_iter=50)
             target_px = transform_util.screen_xy_to_render_xy(*target)
             target_px = -2 * np.array([target_px[0], target_px[1]])
             for i in range(2):
