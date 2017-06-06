@@ -202,6 +202,7 @@ class StereoModelCalibration:
       points: a N x 2 x 2 set of points corresponding to positions on images taken by the two cameras.
         second to last index corresponds to camera number.
       threshold: the maximum permissible distance error in centimeters
+      numiter: the number of iterations to run RANSAC
 
     Returns:
       R: the rotation matrix (to be applied about the centroid of the object) that changes the 3d
@@ -248,13 +249,16 @@ class StereoModelCalibration:
     T = np.mean(points_3d[inliers,:] - transformed_model[inliers,:], axis=0)
     return R.T, T, inliers
 
-  def compute_gaze_location(self, points=None, points_3d=None, use_ransac=False):
+  def compute_gaze_location(self, points=None, points_3d=None, use_ransac=False, threshold=1, num_iter=100):
     """
     Compute the location that a user is looking at given a set of keypoints.
 
     Arguments:
       points: a N x 2 x 2 set of points corresponding to positions on images taken by the two cameras.
         second to last index corresponds to camera number.
+      use_ransac: whether or not to use RANSAC
+      threshold: the maximum permissible distance error in centimeters (RANSAC only)
+      numiter: the number of iterations to run RANSAC
 
     Returns:
       gaze_point: a 2 long vector containing the location on the screen the user is looking at,
@@ -263,9 +267,9 @@ class StereoModelCalibration:
     """
     if use_ransac:
       if points_3d is None:
-        R, T, inliers = self.compute_RT_ransac(points=points)
+        R, T, inliers = self.compute_RT_ransac(points=points, threshold=threshold, num_iter=num_iter)
       else:
-        R, T, inliers = self.compute_RT_ransac(points_3d=points_3d)
+        R, T, inliers = self.compute_RT_ransac(points_3d=points_3d, threshold=threshold, num_iter=num_iter)
     else:
       if points_3d is None:
         R, T = self.compute_RT(points)
