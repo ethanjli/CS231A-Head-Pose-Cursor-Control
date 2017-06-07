@@ -36,6 +36,14 @@ DEFAULT_FILTERS = {
     'y': signal_processing.SlidingWindowThresholdFilter(threshold=0.005),
     'z': signal_processing.SlidingWindowThresholdFilter()
 }
+DEFAULT_FILTERS = {
+    'yaw': signal_processing.KalmanFilter(),
+    'pitch': signal_processing.KalmanFilter(),
+    'roll': signal_processing.KalmanFilter(),
+    'x': signal_processing.KalmanFilter(),
+    'y': signal_processing.KalmanFilter(),
+    'z': signal_processing.KalmanFilter()
+}
 
 class HeadPose(monitoring.Monitor):
     """Consumes head pose tracking stream from stdin and updates."""

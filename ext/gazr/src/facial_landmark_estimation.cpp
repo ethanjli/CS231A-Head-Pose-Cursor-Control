@@ -62,7 +62,7 @@ void FacialLandmarkEstimation::update(cv::InputArray _image)
 
     _debug = image.clone();
 
-    auto color = Scalar(0,128,128);
+    auto color = Scalar(0,0,128);
 
     for (unsigned long i = 0; i < shapes.size(); ++i)
     {

@@ -17,9 +17,10 @@ VIEW_PRESETS = {
             'elevation': 0,
             'azimuth': 90,
             'distance': 1080,
-            'center': (0, 1.8, 2.3)
+            'center': (0, 0, 80.0)
         },
         'visuals': {   # Visual visibility
+            'axes': False
         }
     }
 }

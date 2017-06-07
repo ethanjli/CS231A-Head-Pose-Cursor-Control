@@ -333,6 +333,7 @@ class FacePointsAnimator(FacialLandmarkAnimator):
 
     def on_update(self, keypoints):
         face = stereo_util.compute_3d_model(keypoints, self._camera_matrices)
+        face[:,1] *= -1
         #print face
         self._visual_node.update_list_data(face)
         self.framerate_counter.tick()
@@ -349,7 +350,8 @@ class CalibratedFaceAnimator(CalibratedAnimator):
                                    for j in range(3)]for i in range(facial_landmarks.NUM_KEYPOINTS)]
         self.target_filters = [signal_processing.SlidingWindowFilter(20, estimation_mode=('kernel', signal_processing.half_gaussian_window(20, 10.0)))
                                for i in range(2)]
-        self.target_filters = [signal_processing.KalmanFilter()
+        self.target_filters = [signal_processing.ThresholdKalmanFilter(position_from_stationary=10, velocity_from_stationary=100, acceleration_from_stationary=200,
+                                                                       velocity_to_stationary=200, acceleration_to_stationary=300)
                                for i in range(2)]
 
     def register_rendering_pipeline(self, pipeline):
@@ -408,7 +410,7 @@ class CalibratedCursorAnimator(CalibratedFaceAnimator):
                     self.points_3d_filters[i][j].append(points_3d[i,j])
                     points_3d_filtered[i,j] = self.points_3d_filters[i][j].estimate_current()
             target = self.calibration.compute_gaze_location(points_3d=points_3d_filtered, use_ransac=True,
-                                                            threshold=10, num_iter=50)
+                                                            threshold=2, num_iter=50)
             target_px = transform_util.screen_xy_to_render_xy(*target)
             target_px = -2 * np.array([target_px[0], target_px[1]])
             for i in range(2):

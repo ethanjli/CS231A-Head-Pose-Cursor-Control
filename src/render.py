@@ -204,6 +204,15 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
         elif event.text in _PIXEL_KEYS:
             self._on_key_press_pixel_size(event)
 
+    def set_visibility(self, visual_node, visibility):
+        if visibility:
+            self.visual_nodes[visual_node].add_parent(self.get_scene())
+        else:
+            try:
+                self.visual_nodes[visual_node].remove_parent(self.get_scene())
+            except ValueError:
+                pass  # visual node is already not in the scene
+
     def _on_key_press_pixel_size(event):
         # TODO: implement this!
         pass

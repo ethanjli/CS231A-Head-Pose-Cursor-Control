@@ -119,7 +119,7 @@ class KalmanFilter(object):
         self.kalman = cv2.KalmanFilter(3, 1, 0)
         self.kalman.statePre = np.zeros((3, 1), np.float32)
         self.kalman.measurementMatrix = np.array([[1, 0, 0]], np.float32)
-        self.kalman.measurementNoiseCov = np.array([100], np.float32)
+        self.kalman.measurementNoiseCov = np.array([10], np.float32)
         self.kalman.errorCovPost = np.eye(3, dtype=np.float32) * 4
 
         self.last_measurement_time = None
@@ -137,14 +137,14 @@ class KalmanFilter(object):
             self.kalman.processNoiseCov = np.array(
                 [[1.0 / 9 * dt ** 6, 1.0 / 6 * dt ** 5, 1.0 / 3 * dt ** 4],
                  [1.0 / 6 * dt ** 5, 1.0 / 4 * dt ** 4, 1.0 / 2 * dt ** 3],
-                 [1.0 / 3 * dt ** 4, 1.0 / 2 * dt ** 3, dt]], np.float32) * 100
+                 [1.0 / 3 * dt ** 4, 1.0 / 2 * dt ** 3, dt]], np.float32) * 1000
 
         self.kalman.predict()
         if x is not None:
             self.estimated = self.kalman.correct(np.array([[x]], np.float32)).ravel()
         else:
             self.estimated = prediction.ravel()
-        print self.estimated[2]
+        print self.estimated[1], self.estimated[2]
 
     def estimate_current(self):
         return self.estimated[0]

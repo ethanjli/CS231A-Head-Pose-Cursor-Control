@@ -85,7 +85,7 @@ class PointCloudVisual(visuals.CustomVisual):
         self.program[key] = value
 
     def update_scale(self, pixel_scale):
-        self.set_param('u_size', 2 * pixel_scale)
+        self.set_param('u_size', 30)
 
 class FaceVisual(PointCloudVisual):
     def __init__(self):
@@ -96,5 +96,5 @@ class FaceVisual(PointCloudVisual):
         transform = vispy.visuals.transforms.AffineTransform()
         #transform.rotate(180, (0, 1, 0))
         #transform.rotate(180, (0, 0, 1))
-        #transform.scale((-1, -1, -1))
+        #transform.scale((1, 1, 1))
         return transform
