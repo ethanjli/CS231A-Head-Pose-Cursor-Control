@@ -7,7 +7,7 @@
 
 #include "LinearMath/Matrix3x3.h"
 
-#include "../src/head_pose_estimation.hpp"
+#include "../src/facial_landmark_estimation.hpp"
 
 #define STR_EXPAND(tok) #tok
 #define STR(tok) STR_EXPAND(tok)
@@ -15,10 +15,6 @@
 using namespace std;
 using namespace cv;
 namespace po = boost::program_options;
-
-inline double todeg(double rad) {
-    return rad * 180 / M_PI;
-}
 
 
 int countCameras()
@@ -88,7 +84,7 @@ int main(int argc, char **argv)
         use_camera = true;
     }
 
-    auto estimator = HeadPoseEstimation(vm["model"].as<string>());
+    auto estimator = FacialLandmarkEstimation(vm["model"].as<string>());
 
     VideoCapture video_in;
 
@@ -98,8 +94,6 @@ int main(int argc, char **argv)
         // adjust for your webcam!
         video_in.set(CV_CAP_PROP_FRAME_WIDTH, 320);
         video_in.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
-        //cout << video_in.get(CV_CAP_PROP_FRAME_WIDTH) << endl;
-        //cout << video_in.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
         estimator.focalLength = 455;
         estimator.opticalCenterX = 160;
         estimator.opticalCenterY = 120;
@@ -134,36 +128,19 @@ int main(int argc, char **argv)
         estimator.update(frame);
 
 
-        auto poses = estimator.poses();
+        auto all_landmarks = estimator.all_landmarks();
 
         int i = 0;
         cout << "{";
 
-        for(auto pose : poses) {
-
-
-
-            pose = pose.inv();
-
-            double raw_yaw, raw_pitch, raw_roll;
-            tf::Matrix3x3 mrot(
-                    pose(0,0), pose(0,1), pose(0,2),
-                    pose(1,0), pose(1,1), pose(1,2),
-                    pose(2,0), pose(2,1), pose(2,2));
-            mrot.getRPY(raw_roll, raw_pitch, raw_yaw);
-
-            raw_roll = raw_roll - M_PI/2;
-            raw_yaw = raw_yaw + M_PI/2;
-
-            double yaw, pitch, roll;
-
-            roll = raw_pitch;
-            yaw = raw_yaw;
-            pitch = -raw_roll;
-
-            cout << "\"face_" << i << "\":";
-            cout << setprecision(1) << fixed << "{\"yaw\":" << todeg(yaw) << ", \"pitch\":" << todeg(pitch) << ", \"roll\":" << todeg(roll) << ",";
-            cout << setprecision(4) << fixed << "\"x\":" << pose(0,3) << ", \"y\":" << pose(1,3) << ", \"z\":" << pose(2,3) << "},";
+        for(auto landmarks : all_landmarks) {
+            cout << "\"face_" << i << "\": [";
+            cout << setprecision(4) << fixed;
+            for (unsigned long j = 0; j < landmarks.size(); ++j) {
+                if (j > 0) cout << ", ";
+                cout << "[" << landmarks[j].x << ", " << landmarks[j].y << "]";
+            }
+            cout << "],";
 
             i++;
         }
@@ -172,7 +149,7 @@ int main(int argc, char **argv)
         if (show_frame) {
             Mat flipped = estimator._debug.clone();
             flip(estimator._debug, flipped, 1);
-            imshow("headpose", flipped);
+            imshow("landmarks", flipped);
             if(use_camera) {
                 waitKey(10);
             }
@@ -184,5 +161,3 @@ int main(int argc, char **argv)
     }
 
 }
-
-

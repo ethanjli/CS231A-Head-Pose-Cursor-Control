@@ -17,8 +17,8 @@ option(WITH_ROS "Build ROS nodes" OFF)
 
 if(WITH_ROS)
 
-    find_package(catkin REQUIRED COMPONENTS 
-        roscpp 
+    find_package(catkin REQUIRED COMPONENTS
+        roscpp
         tf
         std_msgs
         visualization_msgs
@@ -31,10 +31,10 @@ if(WITH_ROS)
     include_directories(${catkin_INCLUDE_DIRS})
 
     catkin_package(
-    CATKIN_DEPENDS 
+    CATKIN_DEPENDS
         tf
     DEPENDS OpenCV
-    LIBRARIES 
+    LIBRARIES
     )
 endif()
 
@@ -53,12 +53,12 @@ endif()
 
 
 if(DEBUG)
-    add_definitions(-DHEAD_POSE_ESTIMATION_DEBUG)
+    add_definitions(-DHEAD_POSE_ESTIMATION_DEBUG -DFACIAL_LANDMARK_ESTIMATION_DEBUG)
 endif()
 
 include_directories(${OpenCV_INCLUDE_DIRS})
 
-add_library(gazr SHARED src/head_pose_estimation.cpp)
+add_library(gazr SHARED src/head_pose_estimation.cpp src/facial_landmark_estimation.cpp)
 target_link_libraries(gazr ${dlib_LIBRARIES} ${OpenCV_LIBRARIES})
 
 if(WITH_ROS)
@@ -99,6 +99,9 @@ if(WITH_TOOLS)
 
     add_executable(gazr_estimate_head_direction tools/estimate_head_direction.cpp)
     target_link_libraries(gazr_estimate_head_direction gazr ${OpenCV_LIBRARIES} ${Boost_LIBRARIES})
+
+    add_executable(gazr_estimate_facial_landmarks tools/estimate_facial_landmarks.cpp)
+    target_link_libraries(gazr_estimate_facial_landmarks gazr ${OpenCV_LIBRARIES} ${Boost_LIBRARIES})
 
     add_executable(gazr_show_head_pose tools/show_head_pose.cpp)
     target_link_libraries(gazr_show_head_pose gazr ${OpenCV_LIBRARIES} ${Boost_LIBRARIES})

@@ -7,6 +7,52 @@ CAMERA_Y = 3.4  # cm above the top edge of the screen (the top row of pixels)
 SCREEN_HEIGHT = 1080  # px
 SCREEN_WIDTH = 1920  # px
 
+#def render_xy_px_to_screen_xy_px(render_x, render_y):
+#    screen_center = (SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0)
+#    return (render_x + screen_center[0], render_y - screen_center[1])
+
+#def screen_xy_px_to_render_xy_px(screen_x, screen_y):
+#    screen_center = (SCREEN_WIDTH / 2.0, SCREEN_HEIGHT / 2.0)
+#    return (screen_x - screen_center[0], screen_y + screen_center[1])
+
+#def screen_xy_px_to_screen_xy_cm(screen_x, screen_y):
+#    return (screen_x * MONITOR_WIDTH / SCREEN_WIDTH - CAMERA_X,
+#            screen_y * MONITOR_HEIGHT / SCREEN_HEIGHT - CAMERA_Y)
+
+#def screen_xy_cm_to_screen_xy_px(screen_x, screen_y):
+#    return ((screen_x + CAMERA_X) * SCREEN_WIDTH / MONITOR_WIDTH,
+#            (screen_y + CAMERA_Y) * SCREEN_HEIGHT / MONITOR_HEIGHT)
+
+#def render_xy_to_screen_xy(render_x, render_y):
+#    return screen_xy_px_to_screen_xy_cm(
+#        *render_xy_px_to_screen_xy_px(render_x, render_y))
+
+#def screen_xy_to_render_xy(screen_x, screen_y):
+#    return screen_xy_px_to_render_xy_px(
+#        *screen_xy_cm_to_screen_xy_px(screen_x, screen_y))
+
+def render_xy_px_to_screen_xy_px(render_x, render_y):
+    return render_x, render_y
+
+def screen_xy_px_to_render_xy_px(screen_x, screen_y):
+    return screen_x, screen_y
+
+def screen_xy_px_to_screen_xy_cm(screen_x, screen_y):
+    return (screen_x * MONITOR_WIDTH / SCREEN_WIDTH,
+            screen_y * MONITOR_HEIGHT / SCREEN_HEIGHT)
+
+def screen_xy_cm_to_screen_xy_px(screen_x, screen_y):
+    return (screen_x * SCREEN_WIDTH / MONITOR_WIDTH,
+            screen_y * SCREEN_HEIGHT / MONITOR_HEIGHT)
+
+def render_xy_to_screen_xy(render_x, render_y):
+    return screen_xy_px_to_screen_xy_cm(
+        *render_xy_px_to_screen_xy_px(render_x, render_y))
+
+def screen_xy_to_render_xy(screen_x, screen_y):
+    return screen_xy_px_to_render_xy_px(
+        *screen_xy_cm_to_screen_xy_px(screen_x, screen_y))
+
 class Calibration:
   # Pitch, yaw, roll in degrees
   # (x, y, z) is calibrated initial position
@@ -21,7 +67,7 @@ class Calibration:
   # x direction corresponds to moving rightwards on the screen
   # y direction corresponds to moving up (in the natural sense of up)
   # z direction corresponds to depth of camera
-  # screen_x and screen_y are measured relative to the position of the camera on the screen
+  # screen_x and screen_y are measured relative to the position of the camera used for recording
   #
   # all numbers are in arbitrary units, but the units measuring screen_x, screen_y, x, y, z
   # must be the same

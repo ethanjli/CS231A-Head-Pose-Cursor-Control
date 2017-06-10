@@ -1,16 +1,23 @@
 """
 demo_stabilization.py
-This script demonstrates calibration using head pose tracking with gazr.
+This script demonstrates calibrated head pose tracking with gazr.
 """
 import render
-import visuals.canvas
+import scene_manager
 import animation
 
-pipeline = render.RenderingPipeline()
-canvas = pipeline.instantiate_visual(visuals.canvas.CheckerboardVisual, 'checkerboard')
+VIEW_PRESETS = scene_manager.VIEW_PRESETS
+
+pipeline = render.RenderingPipeline(VIEW_PRESETS['1']['camera'])
+scene_manager = scene_manager.SceneManager(VIEW_PRESETS)
+scene_manager.register_rendering_pipeline(pipeline)
+scene_manager.add_checkerboard()
+
 stabilizer = animation.ScreenStabilizer()
-stabilizer.register_visual_node(canvas)
-stabilizer.register_head_visual_node(pipeline.axes)
+stabilizer.register_visual_node(scene_manager.checkerboard)
+stabilizer.register_head_visual_node(scene_manager.axes)
 stabilizer.register_rendering_pipeline(pipeline)
+
 pipeline.start_rendering()
-stabilizer.clean_up()
+
+stabilizer.stop_animating()

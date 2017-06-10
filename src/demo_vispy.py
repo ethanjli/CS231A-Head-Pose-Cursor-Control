@@ -3,8 +3,12 @@
 import numpy as np
 
 import render
-import visuals.canvas
+import scene_manager
 
-pipeline = render.RenderingPipeline()
-canvas = pipeline.instantiate_visual(visuals.canvas.CanvasVisual, 'checkerboard')
+VIEW_PRESETS = scene_manager.VIEW_PRESETS
+
+pipeline = render.RenderingPipeline(VIEW_PRESETS['1']['camera'])
+scene_manager = scene_manager.SceneManager(VIEW_PRESETS)
+scene_manager.register_rendering_pipeline(pipeline)
+scene_manager.add_checkerboard()
 pipeline.start_rendering()
