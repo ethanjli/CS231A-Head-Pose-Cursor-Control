@@ -144,7 +144,7 @@ class KalmanFilter(object):
             self.estimated = self.kalman.correct(np.array([[x]], np.float32)).ravel()
         else:
             self.estimated = prediction.ravel()
-        print self.estimated[1], self.estimated[2]
+        #print self.estimated[1], self.estimated[2]
 
     def estimate_current(self):
         return self.estimated[0]

@@ -185,8 +185,8 @@ class RenderingPipeline(vispy.scene.SceneCanvas):
         self._update_scale()
 
     def on_draw(self, event):
-        for text in self._texts:
-            text.update()
+        #for text in self._texts:
+            #text.update()
         super(RenderingPipeline, self).on_draw(event)
 
     def register_key_press_observer(self, key_press_observer):

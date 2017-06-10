@@ -1,4 +1,5 @@
 import facial_landmarks
+import animation
 
 class CSVLogger():
     def __init__(self):
@@ -15,6 +16,6 @@ class CSVLogger():
         print row
         self.t += 1
 
-tracker = facial_landmarks.FacialLandmarks()
+tracker = facial_landmarks.FacialLandmarks(filters=animation.make_facial_raw_filters())
 logger = CSVLogger()
 tracker.monitor_sync(logger.echo)

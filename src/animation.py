@@ -309,7 +309,7 @@ class FaceAxesAnimator(FacialLandmarkAnimator):
         self.register_visual_node(pipeline.axes)
 
     def on_update(self, keypoints):
-        (rotation, translation) = STEREO_CALIBRATION.compute_RT(keypoints)
+        (rotation, translation) = self.calibration.compute_RT(keypoints)
         transform = self._visual_node.base_transform()
         transform.translate(-translation)
         try:
@@ -334,7 +334,6 @@ class FacePointsAnimator(FacialLandmarkAnimator):
     def on_update(self, keypoints):
         face = stereo_util.compute_3d_model(keypoints, self._camera_matrices)
         face[:,1] *= -1
-        #print face
         self._visual_node.update_list_data(face)
         self.framerate_counter.tick()
         self._pipeline.update()
@@ -379,7 +378,8 @@ class CalibratedFaceAnimator(CalibratedAnimator):
             initial_pos=np.array([-stereo_cameras.TRANSLATION[0] / 2.0,
                                   transform_util.CAMERA_Y + transform_util.MONITOR_HEIGHT / 2.0]))
         self._facial_landmarks = FacePointsAnimator(
-            make_facial_raw_filters(), make_facial_raw_filters())
+            #make_facial_raw_filters(), make_facial_raw_filters())
+            make_facial_calibration_filters(), make_facial_calibration_filters())
         self.framerate_counter = self._facial_landmarks.framerate_counter
         self._facial_landmarks.animate_async(self._update_head)
 
